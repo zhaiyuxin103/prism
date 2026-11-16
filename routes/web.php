@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AdminReportController;
+use App\Http\Controllers\CreditController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\GenerationController;
 use App\Http\Controllers\GenerationEstimateController;
@@ -11,6 +12,8 @@ use Illuminate\Support\Facades\Route;
 Route::inertia('/', 'Welcome')->name('home');
 
 Route::middleware(['auth', 'verified'])->group(function () {
+    Route::get('credits', [CreditController::class, 'index'])->name('credits.index');
+    Route::post('credits/purchases', [CreditController::class, 'store'])->middleware('throttle:10,1')->name('credits.store');
     Route::get('admin/report', AdminReportController::class)
         ->middleware(['can:view-admin-report', 'throttle:10,1'])->name('admin.report');
     Route::post('generation-estimates', GenerationEstimateController::class)->middleware('throttle:60,1')->name('generations.estimate');

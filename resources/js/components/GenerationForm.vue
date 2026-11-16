@@ -13,10 +13,11 @@ import { Label } from '@/components/ui/label';
 import { useGenerationForm } from '@/composables/useGenerationForm';
 import { formatCost } from '@/types/generation';
 
-const props = defineProps<{ configured: boolean }>();
-const emit = defineEmits<{ created: [] }>();
+const props = defineProps<{ configured: boolean; availableCredits: string }>();
+const emit = defineEmits<{ created: []; balanceChanged: [] }>();
 const {
     fields,
+    canAfford,
     input,
     quote,
     message,
@@ -28,6 +29,8 @@ const {
 } = useGenerationForm(
     () => props.configured,
     () => emit('created'),
+    () => props.availableCredits,
+    () => emit('balanceChanged'),
 );
 
 const imageSizes = [
@@ -285,7 +288,11 @@ const referenceErrors = computed(() =>
                         <p class="pt-2 leading-relaxed">
                             The upper estimate assumes maximum token usage at
                             current rates. Your final cost is based on actual
-                            usage.
+                            usage. The upper estimate is reserved from your
+                            balance when you submit. If provider rates change
+                            before acceptance, the final charge can exceed the
+                            reservation and must be covered before generating
+                            again.
                         </p>
                     </details>
                 </div>
@@ -295,6 +302,15 @@ const referenceErrors = computed(() =>
                     class="rounded-lg border bg-muted/50 p-3 text-sm leading-relaxed text-muted-foreground"
                 >
                     Image generation is being set up. Please check back shortly.
+                </p>
+                <InputError :message="errors.balance" />
+                <p
+                    v-if="quote && !canAfford"
+                    role="status"
+                    class="text-sm text-destructive"
+                >
+                    Not enough available credits for this image. Buy credits
+                    above to cover the upper estimate.
                 </p>
                 <InputError :message="errors.quote" />
                 <InputError :message="errors.client_request_id" />
@@ -321,7 +337,12 @@ const referenceErrors = computed(() =>
                 <Button
                     type="submit"
                     class="h-12 w-full rounded-xl shadow-sm"
-                    :disabled="!quote || submitHttp.processing || !configured"
+                    :disabled="
+                        !quote ||
+                        !canAfford ||
+                        submitHttp.processing ||
+                        !configured
+                    "
                 >
                     <LoaderCircle
                         v-if="submitHttp.processing"

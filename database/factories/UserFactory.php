@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Actions\CreditLedger;
 use App\Enums\TeamRole;
 use App\Models\Team;
 use App\Models\User;
@@ -64,6 +65,11 @@ class UserFactory extends Factory
         return $this->state(fn (array $attributes) => [
             'email_verified_at' => null,
         ]);
+    }
+
+    public function withCredits(): static
+    {
+        return $this->afterCreating(fn (User $user) => app(CreditLedger::class)->purchase($user, '10', (string) Str::uuid()));
     }
 
     public function admin(): static

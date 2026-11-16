@@ -1,6 +1,6 @@
 import { http } from '@inertiajs/vue3';
 import { afterEach, beforeEach, expect, test, vi } from 'vite-plus/test';
-import { effectScope, nextTick } from 'vue';
+import { effectScope, nextTick, ref } from 'vue';
 import { useGenerationForm } from './useGenerationForm';
 
 const scopes: ReturnType<typeof effectScope>[] = [];
@@ -17,7 +17,11 @@ afterEach(() => {
     vi.useRealTimers();
 });
 
-async function prepareForm(status: number, body: unknown) {
+async function prepareForm(
+    status: number,
+    body: unknown,
+    initialBalance = '10',
+) {
     const request = vi
         .fn()
         .mockResolvedValueOnce({
@@ -37,15 +41,67 @@ async function prepareForm(status: number, body: unknown) {
         });
     http.setClient({ request });
     const created = vi.fn();
+    const balanceChanged = vi.fn();
+    const balance = ref(initialBalance);
     const scope = effectScope();
     scopes.push(scope);
-    const form = scope.run(() => useGenerationForm(() => true, created))!;
+    const form = scope.run(() =>
+        useGenerationForm(
+            () => true,
+            created,
+            () => balance.value,
+            balanceChanged,
+        ),
+    )!;
     form.fields.prompt = 'A quiet lake';
     form.fields.references = 'https://example.com/lake.png';
     await nextTick();
     await form.getEstimate();
-    return { form, request, created };
+    return { form, request, created, balance, balanceChanged };
 }
+
+test('blocks insufficient funds and enables submission immediately after buying credits', async () => {
+    const { form, request, created, balance } = await prepareForm(
+        202,
+        { data: { id: 'generation-1' } },
+        '0.149999999999999999',
+    );
+
+    expect(form.canAfford.value).toBe(false);
+    await form.generate();
+    expect(request).toHaveBeenCalledTimes(1);
+
+    balance.value = '0.150000000000000000';
+    await nextTick();
+    expect(form.canAfford.value).toBe(true);
+    await form.generate();
+    expect(created).toHaveBeenCalledOnce();
+});
+
+test('refreshes a stale balance after server rejection and keeps the original submission for retry', async () => {
+    const { form, request, balance, balanceChanged } = await prepareForm(422, {
+        errors: { balance: ['Not enough available credits.'] },
+    });
+    await form.generate();
+
+    expect(form.errors.value.balance).toBe('Not enough available credits.');
+    expect(balanceChanged).toHaveBeenCalledOnce();
+    expect(form.fields.prompt).toBe('A quiet lake');
+    const first = JSON.parse(request.mock.calls[1][0].data);
+
+    balance.value = '20';
+    await nextTick();
+    expect(form.errors.value.balance).toBeUndefined();
+    request.mockResolvedValueOnce({
+        status: 202,
+        headers: {},
+        data: '{"data":{"id":"generation-1"}}',
+    });
+    await form.generate();
+    expect(JSON.parse(request.mock.calls[2][0].data).client_request_id).toBe(
+        first.client_request_id,
+    );
+});
 
 test.each([
     'Your estimate expired. Please refresh it.',

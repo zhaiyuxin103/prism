@@ -34,7 +34,7 @@ test('estimates must have valid image settings', function () {
 test('submission persists a signed estimate and ignores client money or ownership', function () {
     Queue::fake([SyncGeneration::class]);
     Http::fake(['https://pixelforge.promptedit.dev/v1/pricing' => Http::response(pixelforgePricing())]);
-    $user = User::factory()->create();
+    $user = User::factory()->withCredits()->create();
     $input = ['prompt' => 'A quiet mountain lake', 'size' => '1024x1024', 'quality' => 'medium', 'reference_images' => []];
     $quote = $this->actingAs($user)->postJson(route('generations.estimate'), $input)->assertOk()->json('quote');
     $request = [...$input, 'quote' => $quote, 'client_request_id' => (string) Str::uuid(), 'user_id' => 999, 'estimated_user_cost' => 0];

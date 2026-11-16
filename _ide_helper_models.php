@@ -13,6 +13,70 @@
 
 namespace App\Models{
 /**
+ * @property numeric-string $balance
+ * @property numeric-string $reserved
+ * @property int $id
+ * @property int|null $user_id
+ * @property \Carbon\CarbonImmutable|null $created_at
+ * @property \Carbon\CarbonImmutable|null $updated_at
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\CreditEntry> $entries
+ * @property-read int|null $entries_count
+ * @property-read \App\Models\User|null $user
+ * @method static \Database\Factories\CreditAccountFactory factory($count = null, $state = [])
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|CreditAccount newModelQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|CreditAccount newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|CreditAccount query()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|CreditAccount whereBalance($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|CreditAccount whereCreatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|CreditAccount whereId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|CreditAccount whereReserved($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|CreditAccount whereUpdatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|CreditAccount whereUserId($value)
+ * @mixin \Eloquent
+ */
+	#[\AllowDynamicProperties]
+	class IdeHelperCreditAccount {}
+}
+
+namespace App\Models{
+/**
+ * @property int $id
+ * @property int $credit_account_id
+ * @property string|null $generation_id
+ * @property string $reference
+ * @property \App\Enums\CreditEntryType $type
+ * @property string $amount
+ * @property string $reserved_amount
+ * @property string $balance_after
+ * @property string $reserved_after
+ * @property \Carbon\CarbonImmutable|null $created_at
+ * @property \Carbon\CarbonImmutable|null $updated_at
+ * @property-read \App\Models\CreditAccount $creditAccount
+ * @property-read \App\Models\Generation|null $generation
+ * @method static \Database\Factories\CreditEntryFactory factory($count = null, $state = [])
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|CreditEntry newModelQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|CreditEntry newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|CreditEntry query()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|CreditEntry whereAmount($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|CreditEntry whereBalanceAfter($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|CreditEntry whereCreatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|CreditEntry whereCreditAccountId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|CreditEntry whereGenerationId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|CreditEntry whereId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|CreditEntry whereReference($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|CreditEntry whereReservedAfter($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|CreditEntry whereReservedAmount($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|CreditEntry whereType($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|CreditEntry whereUpdatedAt($value)
+ * @mixin \Eloquent
+ */
+	#[\AllowDynamicProperties]
+	class IdeHelperCreditEntry {}
+}
+
+namespace App\Models{
+/**
+ * @property numeric-string|null $reserved_user_cost
  * @property string $id
  * @property int|null $user_id
  * @property string $client_request_id
@@ -40,6 +104,8 @@ namespace App\Models{
  * @property \Carbon\CarbonImmutable|null $capacity_wait_started_at
  * @property \Carbon\CarbonImmutable|null $created_at
  * @property \Carbon\CarbonImmutable|null $updated_at
+ * @property int|null $credit_account_id
+ * @property-read \App\Models\CreditAccount|null $creditAccount
  * @property-read \App\Models\GenerationSettlement|null $settlement
  * @property-read \App\Models\User|null $user
  * @method static \Database\Factories\GenerationFactory factory($count = null, $state = [])
@@ -49,6 +115,7 @@ namespace App\Models{
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Generation whereCapacityWaitStartedAt($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Generation whereClientRequestId($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Generation whereCreatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Generation whereCreditAccountId($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Generation whereErrorCode($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Generation whereErrorMessage($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Generation whereEstimateSnapshot($value)
@@ -67,6 +134,7 @@ namespace App\Models{
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Generation whereProviderStartedAt($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Generation whereRequestHash($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Generation whereRequestPayload($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Generation whereReservedUserCost($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Generation whereStatus($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Generation whereSubmissionState($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Generation whereSubmitAttempts($value)
@@ -224,6 +292,7 @@ namespace App\Models{
  * @property \Carbon\CarbonImmutable|null $two_factor_confirmed_at
  * @property int|null $current_team_id
  * @property bool $is_admin
+ * @property-read \App\Models\CreditAccount|null $creditAccount
  * @property-read \App\Models\Team|null $currentTeam
  * @property-read \Illuminate\Notifications\DatabaseNotificationCollection<int, \Illuminate\Notifications\DatabaseNotification> $notifications
  * @property-read int|null $notifications_count

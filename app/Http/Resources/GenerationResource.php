@@ -22,6 +22,7 @@ class GenerationResource extends JsonResource
             'submission_state' => $this->submission_state->value,
             'estimated_cost' => $this->estimated_user_cost,
             'actual_cost' => $this->settlement?->user_charge,
+            'reserved_cost' => $this->status->isTerminal() ? null : $this->reserved_user_cost,
             'image_url' => $this->image_url,
             'image_expired' => $this->image_url_expires_at?->isPast() ?? false,
             'error_message' => $this->error_message,

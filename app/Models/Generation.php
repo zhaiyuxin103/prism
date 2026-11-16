@@ -17,6 +17,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
  * @property array<string, mixed> $estimate_snapshot
  * @property array<string, string>|null $provider_rates
  * @property array<string, int>|null $usage
+ * @property numeric-string|null $reserved_user_cost
  *
  * @mixin IdeHelperGeneration
  */
@@ -38,6 +39,7 @@ class Generation extends Model
             'submission_state' => SubmissionState::class,
             'estimated_provider_cost' => 'string',
             'estimated_user_cost' => 'string',
+            'reserved_user_cost' => 'string',
             'submit_attempts' => 'integer',
             'poll_attempts' => 'integer',
             'image_url_expires_at' => 'datetime',
@@ -60,5 +62,11 @@ class Generation extends Model
     public function settlement(): HasOne
     {
         return $this->hasOne(GenerationSettlement::class);
+    }
+
+    /** @return BelongsTo<CreditAccount, $this> */
+    public function creditAccount(): BelongsTo
+    {
+        return $this->belongsTo(CreditAccount::class);
     }
 }

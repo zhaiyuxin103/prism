@@ -2,11 +2,14 @@ import { HttpCancelledError, HttpResponseError } from '@inertiajs/core';
 import { useHttp } from '@inertiajs/vue3';
 import { computed, onScopeDispose, reactive, ref, watch } from 'vue';
 import { estimate, store } from '@/routes/generations';
+import { canAfford as hasEnoughCredits } from '@/types/credits';
 import type { GenerationInput } from '@/types/generation';
 
 export function useGenerationForm(
     configured: () => boolean,
     onCreated: () => void,
+    availableCredits: () => string,
+    onBalanceError?: () => void,
 ) {
     type Quote = {
         estimated_cost: string;
@@ -30,7 +33,16 @@ export function useGenerationForm(
             .filter(Boolean),
     }));
     const quote = ref<Quote | null>(null);
+    const canAfford = computed(
+        () =>
+            quote.value !== null &&
+            hasEnoughCredits(availableCredits(), quote.value.maximum_cost),
+    );
     const message = ref('');
+    const balanceError = ref('');
+    watch(availableCredits, () => {
+        balanceError.value = '';
+    });
     const requestId = ref(crypto.randomUUID());
     const estimateHttp = useHttp<GenerationInput, Quote>({
         prompt: '',
@@ -100,6 +112,7 @@ export function useGenerationForm(
             revision++;
             quote.value = null;
             message.value = '';
+            balanceError.value = '';
             requestId.value = crypto.randomUUID();
             estimateHttp.cancel();
             estimateHttp.clearErrors();
@@ -119,7 +132,7 @@ export function useGenerationForm(
     });
 
     async function generate(): Promise<void> {
-        if (!quote.value || submitHttp.processing) {
+        if (!quote.value || submitHttp.processing || !canAfford.value) {
             return;
         }
         message.value = '';
@@ -139,6 +152,10 @@ export function useGenerationForm(
                         requestId.value = crypto.randomUUID();
                     },
                     onError: (errors) => {
+                        if (errors.balance) {
+                            balanceError.value = errors.balance;
+                            onBalanceError?.();
+                        }
                         if (errors.quote) {
                             quote.value = null;
                         }
@@ -152,10 +169,12 @@ export function useGenerationForm(
     const errors = computed(() => ({
         ...estimateHttp.errors,
         ...submitHttp.errors,
+        balance: balanceError.value || undefined,
     }));
 
     return {
         fields,
+        canAfford,
         input,
         quote,
         message,
