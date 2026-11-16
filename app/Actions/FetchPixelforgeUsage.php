@@ -4,6 +4,7 @@ namespace App\Actions;
 
 use App\Exceptions\PixelforgeException;
 use Carbon\CarbonImmutable;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Validator;
 
 /**
@@ -16,6 +17,14 @@ class FetchPixelforgeUsage
 
     /** @return UsageReport */
     public function handle(string $startDate, string $endDate): array
+    {
+        $key = 'pixelforge:usage:'.hash('sha256', config('services.pixelforge.base_url').'|'.config('services.pixelforge.api_key')).':'.$startDate.':'.$endDate;
+
+        return Cache::remember($key, 30, fn (): array => $this->fetch($startDate, $endDate));
+    }
+
+    /** @return UsageReport */
+    private function fetch(string $startDate, string $endDate): array
     {
         $payload = $this->client->usage($startDate, $endDate);
         $money = ['required', 'string', 'regex:/^\d{1,30}\.\d{9}$/D'];

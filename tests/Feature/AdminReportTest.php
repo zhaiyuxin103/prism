@@ -6,6 +6,7 @@ use App\Models\GenerationSettlement;
 use App\Models\User;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\Client\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\RateLimiter;
@@ -14,7 +15,7 @@ use Inertia\Testing\AssertableInertia as Assert;
 require_once __DIR__.'/../Fixtures/pixelforge.php';
 
 beforeEach(function () {
-    config(['services.pixelforge.api_key' => 'report-test-key', 'services.pixelforge.base_url' => 'https://provider.test/v1']);
+    config(['services.pixelforge.api_key' => 'report-test-key', 'services.pixelforge.base_url' => 'https://provider.test/v1', 'inertia.ssr.enabled' => false]);
     Http::preventStrayRequests();
 });
 
@@ -271,3 +272,92 @@ test('paginates user totals without changing the financial totals', function () 
         ->where('users.prev_page_url', route('admin.report', ['start_date' => '2026-11-16', 'end_date' => '2026-11-16', 'page' => 1])));
     Http::assertNothingSent();
 });
+
+test('reuses verified usage across user pages for thirty seconds without freezing local totals', function () {
+    $this->freezeTime();
+    $admin = User::factory()->admin()->create();
+    Http::fake(['https://provider.test/v1/usage*' => Http::response(reportUsage('2026-11-16', '2026-11-16'))]);
+    $filters = ['start_date' => '2026-11-16', 'end_date' => '2026-11-16'];
+    $checkedAt = now()->toIso8601String();
+
+    $this->actingAs($admin)->get(route('admin.report', $filters))->assertOk();
+    reportSettlement($admin, '2026-11-16 12:00:00', '0.100000000000000000', '0.125000000000000000');
+    $this->travel(29)->seconds();
+    $this->get(route('admin.report', [...$filters, 'page' => 2]))->assertOk()->assertInertia(fn (Assert $page) => $page
+        ->where('report.totals.generations', 1)
+        ->where('report.reconciliation.checked_at', $checkedAt));
+    Http::assertSentCount(1);
+
+    $this->travel(1)->seconds();
+    $this->get(route('admin.report', $filters))->assertOk()->assertInertia(fn (Assert $page) => $page
+        ->where('report.reconciliation.checked_at', now()->toIso8601String()));
+    Http::assertSentCount(2);
+});
+
+test('isolates cached usage by provider endpoint key and date range', function (string $change) {
+    $this->travelTo(CarbonImmutable::parse('2026-11-17T08:00:00Z'));
+    $admin = User::factory()->admin()->create();
+    Http::fake([
+        'https://provider.test/v1/usage*' => fn (Request $request) => Http::response(reportUsage($request['start_date'], $request['end_date'])),
+        'https://other-provider.test/v1/usage*' => fn (Request $request) => Http::response(reportUsage($request['start_date'], $request['end_date'])),
+    ]);
+    $filters = ['start_date' => '2026-11-16', 'end_date' => '2026-11-16'];
+    $this->actingAs($admin)->get(route('admin.report', $filters))->assertOk();
+    match ($change) {
+        'key' => config(['services.pixelforge.api_key' => 'another-key']),
+        'endpoint' => config(['services.pixelforge.base_url' => 'https://other-provider.test/v1']),
+        'start date' => $filters['start_date'] = '2026-11-15',
+        'end date' => $filters['end_date'] = '2026-11-17',
+    };
+
+    $this->get(route('admin.report', $filters))->assertOk()->assertInertia(fn (Assert $page) => $page
+        ->where('report.reconciliation.status', 'matched'));
+
+    Http::assertSentCount(2);
+})->with(['key', 'endpoint', 'start date', 'end date']);
+
+test('does not cache invalid usage or connection failures', function (string $failure) {
+    $admin = User::factory()->admin()->create();
+    $responses = Http::sequence();
+    if ($failure === 'invalid usage') {
+        $responses->push(['object' => 'usage']);
+    } else {
+        $responses->pushFailedConnection();
+    }
+    $responses->push(reportUsage('2026-11-16', '2026-11-16'));
+    Http::fake(['https://provider.test/v1/usage*' => $responses]);
+    $url = route('admin.report', ['start_date' => '2026-11-16', 'end_date' => '2026-11-16']);
+    $this->actingAs($admin)->get($url)->assertOk()->assertInertia(fn (Assert $page) => $page
+        ->where('report.reconciliation.status', 'unavailable'));
+
+    $this->get($url)->assertOk()->assertInertia(fn (Assert $page) => $page
+        ->where('report.reconciliation.status', 'matched'));
+
+    Http::assertSentCount(2);
+})->with(['invalid usage', 'connection failure']);
+
+test('retries usage as soon as local capacity is available', function (string $limit) {
+    $this->freezeTime();
+    $admin = User::factory()->admin()->create();
+    Http::fake(['https://provider.test/v1/usage*' => Http::response(reportUsage('2026-11-16', '2026-11-16'))]);
+    $lock = Cache::lock('pixelforge:request-budget-lock', 5);
+    if ($limit === 'lock') {
+        $lock->get();
+    } else {
+        RateLimiter::increment('pixelforge:requests', 60, 45);
+    }
+    $url = route('admin.report', ['start_date' => '2026-11-16', 'end_date' => '2026-11-16']);
+    $this->actingAs($admin)->get($url)->assertOk()->assertInertia(fn (Assert $page) => $page
+        ->where('report.reconciliation.status', 'unavailable'));
+    Http::assertNothingSent();
+    if ($limit === 'lock') {
+        $lock->release();
+    } else {
+        RateLimiter::clear('pixelforge:requests');
+    }
+
+    $this->get($url)->assertOk()->assertInertia(fn (Assert $page) => $page
+        ->where('report.reconciliation.status', 'matched'));
+
+    Http::assertSentCount(1);
+})->with(['lock', 'budget']);

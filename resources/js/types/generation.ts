@@ -25,6 +25,9 @@ export type GenerationPage = {
 };
 
 export function formatCost(value: string): string {
-    const [whole, fraction = ''] = value.split('.');
-    return `$${whole}.${fraction.replace(/0+$/, '').padEnd(4, '0')}`;
+    const negative = value.startsWith('-');
+    const [whole, fraction = ''] = (negative ? value.slice(1) : value).split(
+        '.',
+    );
+    return `${negative ? '-' : ''}$${whole}.${fraction.replace(/0+$/, '').padEnd(4, '0')}`;
 }
