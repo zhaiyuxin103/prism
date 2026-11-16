@@ -79,6 +79,9 @@ export default defineConfig({
     },
     staged: {
         '*': 'vp check --fix --no-error-on-unmatched-pattern',
-        '!(*.blade|_ide_helper_models).php': 'vendor/bin/pint',
+        '!(*.blade|_ide_helper_models).php': [
+            'vendor/bin/rector process',
+            'vendor/bin/pint',
+        ],
     },
 });

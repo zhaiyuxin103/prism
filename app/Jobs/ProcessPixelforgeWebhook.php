@@ -42,17 +42,13 @@ class ProcessPixelforgeWebhook implements ShouldBeUnique, ShouldQueue
 
                 if ($event->event_type !== 'ping') {
                     $snapshot = $event->payload['data']['object'];
-                    if ($event->event_type !== 'generation.'.($snapshot['status'] ?? '')) {
-                        throw new RuntimeException('Event type does not match generation status.');
-                    }
+                    throw_if($event->event_type !== 'generation.'.($snapshot['status'] ?? ''), RuntimeException::class, 'Event type does not match generation status.');
                     $generation = Generation::query()->where('provider_generation_id', $event->provider_generation_id)->first();
                     $localId = $snapshot['metadata']['local_generation_id'] ?? null;
                     if ($generation === null && is_string($localId)) {
                         $generation = Generation::query()->find($localId);
                     }
-                    if (! $generation) {
-                        throw new RuntimeException('No matching local generation.');
-                    }
+                    throw_unless($generation, RuntimeException::class, 'No matching local generation.');
                     $apply->handle($generation->id, $snapshot);
                 }
 

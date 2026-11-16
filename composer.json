@@ -20,6 +20,7 @@
     },
     "require-dev": {
         "barryvdh/laravel-ide-helper": "^3.7",
+        "driftingly/rector-laravel": "^2.6",
         "fakerphp/faker": "^1.24",
         "larastan/larastan": "^3.9",
         "laravel/boost": "^2.2",
@@ -30,7 +31,8 @@
         "mockery/mockery": "^1.6",
         "nunomaduro/collision": "^8.9.3",
         "pestphp/pest": "^5.3",
-        "pestphp/pest-plugin-laravel": "^5.0"
+        "pestphp/pest-plugin-laravel": "^5.0",
+        "rector/rector": "^2.7"
     },
     "autoload": {
         "psr-4": {
@@ -63,6 +65,12 @@
         "lint:check": [
             "pint --parallel --test"
         ],
+        "refactor": [
+            "rector"
+        ],
+        "refactor:check": [
+            "rector --dry-run"
+        ],
         "ci:check": [
             "Composer\\Config::disableProcessTimeout",
             "npm run check",
@@ -76,6 +84,7 @@
         "test": [
             "@php artisan config:clear --ansi",
             "@lint:check",
+            "@refactor:check",
             "@types:check",
             "@php artisan test"
         ],

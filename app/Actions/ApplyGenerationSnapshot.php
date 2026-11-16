@@ -43,21 +43,15 @@ class ApplyGenerationSnapshot
             $generation = Generation::query()->lockForUpdate()->findOrFail($generationId);
             $status = GenerationStatus::from($data['status']);
 
-            if ($data['metadata']['local_generation_id'] !== $generation->id ||
-                ($generation->provider_generation_id !== null && $generation->provider_generation_id !== $data['id'])) {
-                throw new RuntimeException('Provider generation identity mismatch.');
-            }
+            throw_if($data['metadata']['local_generation_id'] !== $generation->id ||
+                ($generation->provider_generation_id !== null && $generation->provider_generation_id !== $data['id']), RuntimeException::class, 'Provider generation identity mismatch.');
 
             foreach (['prompt', 'size', 'quality', 'reference_images'] as $field) {
-                if ($data[$field] !== $generation->request_payload[$field]) {
-                    throw new RuntimeException('Provider request snapshot mismatch.');
-                }
+                throw_if($data[$field] !== $generation->request_payload[$field], RuntimeException::class, 'Provider request snapshot mismatch.');
             }
 
             if ($generation->status->isTerminal()) {
-                if ($status->isTerminal() && $status !== $generation->status) {
-                    throw new RuntimeException('Conflicting terminal generation status.');
-                }
+                throw_if($status->isTerminal() && $status !== $generation->status, RuntimeException::class, 'Conflicting terminal generation status.');
 
                 return;
             }

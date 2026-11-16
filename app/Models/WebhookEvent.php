@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Database\Factories\WebhookEventFactory;
+use Illuminate\Database\Eloquent\Attributes\Guarded;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -11,13 +12,11 @@ use Illuminate\Database\Eloquent\Model;
  *
  * @mixin IdeHelperWebhookEvent
  */
+#[Guarded(['id'])]
 class WebhookEvent extends Model
 {
     /** @use HasFactory<WebhookEventFactory> */
     use HasFactory;
-
-    /** @var list<string> */
-    protected $guarded = ['id'];
 
     /** @var array<string, mixed> */
     protected $attributes = ['processing_status' => 'pending', 'attempts' => 0];

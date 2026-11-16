@@ -32,9 +32,7 @@ class GenerationPricing
             $tokens = $usage[$type] ?? null;
             $rate = $rates[$type] ?? null;
 
-            if (! is_int($tokens) || $tokens < 0 || ! is_string($rate) || ! is_numeric($rate) || ! preg_match(self::RATE_PATTERN, $rate)) {
-                throw new InvalidArgumentException('Incomplete or invalid token usage and rates.');
-            }
+            throw_if(! is_int($tokens) || $tokens < 0 || ! is_string($rate) || ! is_numeric($rate) || ! preg_match(self::RATE_PATTERN, $rate), InvalidArgumentException::class, 'Incomplete or invalid token usage and rates.');
 
             $total = bcadd($total, bcmul((string) $tokens, $rate, self::PRECISION), self::PRECISION);
         }
