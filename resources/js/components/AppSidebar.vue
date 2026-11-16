@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Link, usePage } from '@inertiajs/vue3';
-import { BookOpen, ChartNoAxesCombined, LayoutGrid } from '@lucide/vue';
+import { BookOpen, ChartNoAxesCombined, LayoutGrid, Wallet } from '@lucide/vue';
 import { computed } from 'vue';
 import AppLogo from '@/components/AppLogo.vue';
 import NavFooter from '@/components/NavFooter.vue';
@@ -18,6 +18,7 @@ import {
 } from '@/components/ui/sidebar';
 import { dashboard } from '@/routes';
 import { report } from '@/routes/admin';
+import { index as credits } from '@/routes/credits';
 import type { NavItem } from '@/types';
 
 const page = usePage();
@@ -35,6 +36,7 @@ const mainNavItems = computed<NavItem[]>(() => [
         href: dashboardUrl.value,
         icon: LayoutGrid,
     },
+    { title: 'Credits', href: credits(), icon: Wallet },
 ]);
 
 const footerNavItems: NavItem[] = [

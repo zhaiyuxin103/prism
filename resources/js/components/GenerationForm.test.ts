@@ -11,6 +11,7 @@ beforeEach(() => {
 
 vi.mock('@/composables/useGenerationForm', () => ({
     useGenerationForm: () => ({
+        canAfford: ref(true),
         fields: {
             prompt: 'A lake',
             size: '1536x1024',
@@ -24,7 +25,7 @@ vi.mock('@/composables/useGenerationForm', () => ({
         }),
         message: ref(''),
         estimateHttp: { processing: false },
-        submitHttp: { processing: false },
+        submitHttp: { processing: false, clearErrors: vi.fn() },
         errors: ref(formState.errors),
         getEstimate: vi.fn(),
         generate: vi.fn(),
@@ -33,7 +34,10 @@ vi.mock('@/composables/useGenerationForm', () => ({
 
 test('shows both prices and explains that the upper estimate uses current rates', async () => {
     const html = await renderToString(
-        createSSRApp(GenerationForm, { configured: true }),
+        createSSRApp(GenerationForm, {
+            configured: true,
+            availableCredits: '10',
+        }),
     );
 
     expect(html).toContain('$0.4125625');
@@ -72,7 +76,10 @@ test.each<{ name: string; errors: Record<string, string>; expected: string[] }>(
         formState.errors = errors;
 
         const html = await renderToString(
-            createSSRApp(GenerationForm, { configured: true }),
+            createSSRApp(GenerationForm, {
+                configured: true,
+                availableCredits: '10',
+            }),
         );
 
         const paragraphs = Array.from(
@@ -90,7 +97,10 @@ test('opens references and associates validation errors with the field', async (
     formState.errors = { 'reference_images.0': 'The image URL is invalid.' };
 
     const html = await renderToString(
-        createSSRApp(GenerationForm, { configured: true }),
+        createSSRApp(GenerationForm, {
+            configured: true,
+            availableCredits: '10',
+        }),
     );
 
     expect(html).toMatch(/<details[^>]* open(?:\s|>)/);
@@ -102,7 +112,10 @@ test('opens references and associates validation errors with the field', async (
 
 test('disables creation and explains why when generation is not configured', async () => {
     const html = await renderToString(
-        createSSRApp(GenerationForm, { configured: false }),
+        createSSRApp(GenerationForm, {
+            configured: false,
+            availableCredits: '10',
+        }),
     );
 
     expect(html).toMatch(/<fieldset[^>]*disabled/);

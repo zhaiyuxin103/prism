@@ -1,9 +1,12 @@
 <?php
 
+use App\Models\CreditAccount;
+use App\Models\CreditEntry;
 use App\Models\Generation;
 use App\Models\GenerationSettlement;
 use App\Models\WebhookEvent;
 use Illuminate\Database\QueryException;
+use Illuminate\Foundation\Testing\RefreshDatabaseState;
 use Illuminate\Support\Facades\DB;
 
 test('the initial schema preserves exact dollar strings and settlement constraints', function () {
@@ -31,10 +34,17 @@ test('the initial schema preserves exact dollar strings and settlement constrain
 test('generation migrations can roll back populated tables and rebuild the current schema', function () {
     GenerationSettlement::factory()->create();
     WebhookEvent::factory()->create();
+    CreditEntry::factory()->create();
+    /** Exercise real DDL outside the test transaction so SQLite can toggle foreign key enforcement. */
+    DB::commit();
+    RefreshDatabaseState::$migrated = false;
     $migrations = [
         require database_path('migrations/2026_11_16_184328_create_generations_table.php'),
         require database_path('migrations/2026_11_16_184329_create_generation_settlements_table.php'),
         require database_path('migrations/2026_11_16_184330_create_webhook_events_table.php'),
+        require database_path('migrations/2026_11_16_224720_create_credit_accounts_table.php'),
+        require database_path('migrations/2026_11_16_224721_create_credit_entries_table.php'),
+        require database_path('migrations/2026_11_16_224722_add_credit_reservation_to_generations_table.php'),
     ];
 
     foreach (array_reverse($migrations) as $migration) {
@@ -47,7 +57,10 @@ test('generation migrations can roll back populated tables and rebuild the curre
     $this->assertDatabaseCount('generations', 0);
     $this->assertDatabaseCount('generation_settlements', 0);
     $this->assertDatabaseCount('webhook_events', 0);
-    $generation = Generation::factory()->create(['capacity_wait_started_at' => now()]);
+    $this->assertDatabaseCount('credit_accounts', 0);
+    $this->assertDatabaseCount('credit_entries', 0);
+    $account = CreditAccount::factory()->create();
+    $generation = Generation::factory()->create(['capacity_wait_started_at' => now(), 'credit_account_id' => $account->id, 'reserved_user_cost' => '0.000000000000001250']);
     $settlement = GenerationSettlement::factory()->for($generation)->make([
         'provider_cost' => '0.000000000000001000',
         'user_charge' => '0.000000000000001250',
@@ -57,4 +70,5 @@ test('generation migrations can roll back populated tables and rebuild the curre
 
     expect($settlement->refresh()->calculation_version)->toBe('v2');
     expect($settlement->getRawOriginal('user_charge'))->toBe('0.000000000000001250');
+    expect($generation->refresh()->reserved_user_cost)->toBe('0.000000000000001250');
 });

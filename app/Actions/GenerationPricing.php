@@ -22,7 +22,7 @@ class GenerationPricing
      *
      * @param  array<string, int>  $usage
      * @param  array<string, string>  $rates
-     * @return array{provider_cost: string, user_charge: string}
+     * @return array{provider_cost: numeric-string, user_charge: numeric-string}
      */
     public function calculate(array $usage, array $rates): array
     {
@@ -48,7 +48,7 @@ class GenerationPricing
     /**
      * @param  array{prompt: string, size: string, quality: string, reference_images: list<string>}  $input
      * @param  array<string, mixed>  $pricing
-     * @return array{provider_cost: string, user_charge: string, maximum_user_cost: string, usage: array<string, int>, maximum_usage: array<string, int>, rates: array<string, string>, version: string}
+     * @return array{provider_cost: numeric-string, user_charge: numeric-string, maximum_user_cost: numeric-string, usage: array<string, int>, maximum_usage: array<string, int>, rates: array<string, string>, version: string}
      */
     public function estimate(array $input, array $pricing): array
     {

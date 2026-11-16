@@ -13,7 +13,7 @@ use RuntimeException;
 
 class ApplyGenerationSnapshot
 {
-    public function __construct(private GenerationPricing $pricing) {}
+    public function __construct(private GenerationPricing $pricing, private CreditLedger $credits) {}
 
     /** @param array<string, mixed> $snapshot */
     public function handle(string $generationId, array $snapshot): void
@@ -88,6 +88,8 @@ class ApplyGenerationSnapshot
                     'settled_at' => now(),
                 ]);
 
+                $this->credits->settle($generation, $amounts['user_charge']);
+
                 $generation->fill([
                     'usage' => $status === GenerationStatus::Succeeded ? $data['usage'] : null,
                     'image_url' => $data['image_url'] ?? null,
@@ -125,6 +127,7 @@ class ApplyGenerationSnapshot
                 'calculation_version' => 'v2',
                 'settled_at' => now(),
             ]);
+            $this->credits->settle($generation, GenerationPricing::ZERO);
         }, 3);
     }
 }

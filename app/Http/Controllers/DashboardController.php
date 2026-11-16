@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\CreditLedger;
 use App\Actions\PixelforgeClient;
 use App\Http\Resources\GenerationResource;
 use App\Models\Generation;
@@ -12,7 +13,7 @@ use Inertia\Response;
 
 class DashboardController extends Controller
 {
-    public function __invoke(Request $request): Response
+    public function __invoke(Request $request, CreditLedger $credits): Response
     {
         $email = strtolower($request->user()->email);
 
@@ -36,6 +37,8 @@ class DashboardController extends Controller
 
         return Inertia::render('Dashboard', [
             'pendingInvitations' => $pendingInvitations,
+            'credits' => fn () => $credits->balance($request->user()),
+            'creditPackages' => CreditLedger::PACKAGES,
             'generations' => fn () => GenerationResource::collection(
                 Generation::query()->where('user_id', $request->user()->id)
                     ->with('settlement')->latest()->orderByDesc('id')->paginate(12),

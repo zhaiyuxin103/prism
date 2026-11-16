@@ -2,7 +2,7 @@
 
 An image-generation app built with Laravel 13, Inertia 3 and Vue 3 for the [Pixelforge assessment](https://pixelforge.promptedit.dev/assessment). Users can request an estimate, submit a generation, and view private history with live status, images and final charges.
 
-The provider is simulated: no real AI generation or payment processing takes place. Administrator reports include daily and per-user financial totals with provider reconciliation. Credit balances are not implemented.
+The provider is simulated: no real AI generation or payment processing takes place. Administrator reports include daily and per-user financial totals with provider reconciliation. Personal credit balances support simulated purchases, reservations and exact settlement.
 
 ## Local setup
 
@@ -73,6 +73,16 @@ Overload and other recoverable errors have bounded attempts and backoff. A netwo
 
 The page refreshes every three seconds while checks are active, or every 30 seconds when only paused generations remain. This page refresh does not restart provider polling. Signed image URLs expire after 24 hours; history and charges remain available.
 
+## Balances and simulated purchases
+
+New users start with zero credits. Open **Credits** from the sidebar or use the balance card in the studio to simulate a $10, $25 or $50 purchase. No card details or real payment are involved. Credits belong to the individual user, independently of the selected team.
+
+Available credits equal balance minus reserved credits. Submitting a new generation requires and reserves the full upper estimate in the same transaction as generation creation. The server checks funds even if a stale browser enables submission. On success, the actual charge is deducted and the full reservation is released; confirmed failure or rejection releases it without a charge. Uncertain submissions and paused checks keep the reservation, and resuming does not reserve again. If captured provider rates produce a charge above the reservation, Prism records the exact charge, even if it leaves a negative balance, and requires sufficient available credits before another generation.
+
+Purchases are idempotent per user and request ID. Retrying an unconfirmed purchase in the current page retains the same amount and ID. User/account locks serialize purchases and reservations; generation/account locks and unique ledger references prevent repeated settlements. The credit history lists purchases, reservations and settlements with exact balance snapshots. Deleted users' credit accounts and ledger entries remain available for settling in-flight work.
+
+Run migrations before using balances. Generations created before this feature remain in financial reports but do not debit the new credit accounts retroactively. New generations have an explicit account and reservation marker. Existing users also start at zero; no credits are granted automatically.
+
 ## Admin report
 
 Platform administrators can open **Admin report** from the sidebar. Access requires a verified email and `users.is_admin`; team roles do not grant financial-report access. New users are not administrators.
@@ -105,6 +115,8 @@ npm run check
 vendor/bin/phpstan analyse
 npm run build
 ```
+
+For the optional concurrency test, create a disposable PostgreSQL database named `prism_credits_test_*`, set its `DB_CONNECTION`, `DB_HOST`, `DB_PORT`, `DB_DATABASE`, `DB_USERNAME` and `DB_PASSWORD`, and run `php artisan test --compact tests/Feature/CreditConcurrencyTest.php`. It commits fixtures so independent processes can exercise actual row locks. Never point this test at application data. The SQLite suite skips it.
 
 Run the build before or after PHP tests, not concurrently: the build replaces assets that HTTP tests render. `composer ci:check` runs frontend checks/tests and the backend checks/tests. PHP tests use an isolated in-memory SQLite database and fake provider HTTP responses. Queue integration tests use real database queue dispatch/processing to exercise uniqueness and delayed work. Frontend tests exercise the real Inertia `useHttp` behavior and render the price presentation.
 

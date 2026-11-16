@@ -206,6 +206,15 @@ async function resumeChecking(): Promise<void> {
                         }}
                     </dd>
                 </div>
+                <div
+                    v-if="generation.reserved_cost"
+                    class="flex items-center justify-between gap-2 text-xs"
+                >
+                    <dt class="text-muted-foreground">Reserved credits</dt>
+                    <dd class="font-mono">
+                        {{ formatCost(generation.reserved_cost) }}
+                    </dd>
+                </div>
             </dl>
             <p
                 v-if="generation.error_message"

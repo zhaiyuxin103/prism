@@ -7,7 +7,9 @@ import {
     LockKeyhole,
     Sparkles,
 } from '@lucide/vue';
-import { watch } from 'vue';
+import { ref, watch } from 'vue';
+import CreditBalanceCard from '@/components/CreditBalance.vue';
+import type { CreditBalance } from '@/types/credits';
 import GenerationCard from '@/components/GenerationCard.vue';
 import GenerationForm from '@/components/GenerationForm.vue';
 import PendingInvitationsModal from '@/components/PendingInvitationsModal.vue';
@@ -22,10 +24,24 @@ const props = defineProps<{
     hasActiveGenerations: boolean;
     hasPausedGenerations: boolean;
     providerConfigured: boolean;
+    credits: CreditBalance;
+    creditPackages: string[];
 }>();
 const page = usePage();
+const balance = ref(props.credits);
+watch(
+    () => props.credits,
+    (value) => {
+        balance.value = value;
+    },
+);
+function purchased(credits: CreditBalance): void {
+    balance.value = credits;
+    router.reload({ only: ['credits'] });
+}
 const generationProps = [
     'generations',
+    'credits',
     'hasActiveGenerations',
     'hasPausedGenerations',
 ];
@@ -117,6 +133,12 @@ defineOptions({
                     />Updating your images</span
                 >
             </header>
+            <CreditBalanceCard
+                :credits="balance"
+                :packages="creditPackages"
+                show-history
+                @purchased="purchased"
+            />
             <a
                 href="#generations"
                 class="flex w-fit items-center gap-2 rounded-lg border bg-card px-3 py-2.5 text-sm font-medium lg:hidden"
@@ -131,6 +153,8 @@ defineOptions({
             >
                 <GenerationForm
                     :configured="providerConfigured"
+                    :available-credits="balance.available"
+                    @balance-changed="router.reload({ only: ['credits'] })"
                     @created="showLatest"
                 />
                 <section

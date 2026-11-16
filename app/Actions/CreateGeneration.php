@@ -14,7 +14,7 @@ use Illuminate\Validation\ValidationException;
 
 class CreateGeneration
 {
-    public function __construct(private PixelforgeClient $client, private GenerationPricing $pricing) {}
+    public function __construct(private PixelforgeClient $client, private GenerationPricing $pricing, private CreditLedger $credits) {}
 
     /**
      * @param  array{prompt: string, size: string, quality: string, reference_images: list<string>}  $input
@@ -71,6 +71,8 @@ class CreateGeneration
                 'estimate_snapshot' => $current,
                 'next_attempt_at' => now(),
             ])->save();
+
+            $this->credits->reserve($user, $generation, $current['maximum_user_cost']);
 
             return $generation;
         }, 3);

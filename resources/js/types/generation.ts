@@ -11,6 +11,7 @@ export type Generation = GenerationInput & {
     submission_state: 'pending' | 'uncertain' | 'accepted' | 'rejected';
     estimated_cost: string;
     actual_cost: string | null;
+    reserved_cost?: string | null;
     image_url: string | null;
     image_expired: boolean;
     error_message: string | null;
