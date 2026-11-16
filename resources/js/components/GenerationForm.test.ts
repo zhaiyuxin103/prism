@@ -85,3 +85,27 @@ test.each<{ name: string; errors: Record<string, string>; expected: string[] }>(
         expect(html.match(/A prompt is required\./g)).toHaveLength(1);
     },
 );
+
+test('opens references and associates validation errors with the field', async () => {
+    formState.errors = { 'reference_images.0': 'The image URL is invalid.' };
+
+    const html = await renderToString(
+        createSSRApp(GenerationForm, { configured: true }),
+    );
+
+    expect(html).toMatch(/<details[^>]* open(?:\s|>)/);
+    expect(html).toMatch(
+        /<textarea[^>]*id="references"[^>]*aria-describedby="references-help references-errors"[^>]*aria-invalid="true"/,
+    );
+    expect(html).toContain('The image URL is invalid.');
+});
+
+test('disables creation and explains why when generation is not configured', async () => {
+    const html = await renderToString(
+        createSSRApp(GenerationForm, { configured: false }),
+    );
+
+    expect(html).toMatch(/<fieldset[^>]*disabled/);
+    expect(html).toMatch(/<button[^>]*type="submit"[^>]*disabled/);
+    expect(html).toContain('Image generation is being set up.');
+});

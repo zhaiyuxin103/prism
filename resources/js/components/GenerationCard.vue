@@ -1,8 +1,16 @@
 <script setup lang="ts">
 import { useHttp } from '@inertiajs/vue3';
-import { ImageOff, LoaderCircle, Sparkles } from '@lucide/vue';
-import { computed, ref } from 'vue';
+import { Expand, ImageOff, LoaderCircle, Sparkles } from '@lucide/vue';
+import { computed, ref, watch } from 'vue';
 import { Button } from '@/components/ui/button';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+} from '@/components/ui/dialog';
 import { resume } from '@/routes/generations';
 import { formatCost } from '@/types/generation';
 import type { Generation } from '@/types/generation';
@@ -12,6 +20,18 @@ const emit = defineEmits<{ resumed: [] }>();
 const brokenImage = ref(false);
 const error = ref('');
 const http = useHttp({});
+const hasImage = computed(
+    () =>
+        !!props.generation.image_url &&
+        !props.generation.image_expired &&
+        !brokenImage.value,
+);
+watch(
+    () => props.generation.image_url,
+    () => {
+        brokenImage.value = false;
+    },
+);
 const pending = computed(() =>
     ['queued', 'processing'].includes(props.generation.status),
 );
@@ -20,7 +40,12 @@ const label = computed(() => {
     if (props.generation.submission_state === 'uncertain')
         return 'Confirming submission';
     if (props.generation.submission_state === 'pending') return 'Submitting';
-    return props.generation.status;
+    return {
+        queued: 'In queue',
+        processing: 'Creating',
+        succeeded: 'Complete',
+        failed: 'Failed',
+    }[props.generation.status];
 });
 async function resumeChecking(): Promise<void> {
     error.value = '';
@@ -34,30 +59,68 @@ async function resumeChecking(): Promise<void> {
 </script>
 
 <template>
-    <article class="overflow-hidden rounded-2xl border bg-card">
+    <article
+        class="min-w-0 overflow-hidden rounded-2xl border bg-card shadow-xs transition-shadow hover:shadow-md motion-reduce:transition-none"
+    >
         <div
             class="relative flex aspect-square items-center justify-center overflow-hidden bg-muted/40"
         >
-            <img
-                v-if="
-                    generation.image_url &&
-                    !generation.image_expired &&
-                    !brokenImage
-                "
-                :src="generation.image_url"
-                :alt="generation.prompt"
-                loading="lazy"
-                referrerpolicy="no-referrer"
-                class="size-full object-contain"
-                @error="brokenImage = true"
-            />
+            <Dialog v-if="hasImage">
+                <DialogTrigger as-child>
+                    <button
+                        type="button"
+                        class="group relative size-full cursor-zoom-in focus-visible:-outline-offset-4"
+                        :aria-label="`Preview image: ${generation.prompt}`"
+                    >
+                        <img
+                            :src="generation.image_url!"
+                            :alt="generation.prompt"
+                            loading="lazy"
+                            referrerpolicy="no-referrer"
+                            class="size-full object-contain"
+                            @error="brokenImage = true"
+                        />
+                        <span
+                            class="absolute right-3 bottom-3 flex items-center gap-1.5 rounded-lg border bg-background/95 px-2.5 py-2 text-xs font-medium shadow-sm"
+                            ><Expand
+                                class="size-3.5"
+                                aria-hidden="true"
+                            />Preview</span
+                        >
+                    </button>
+                </DialogTrigger>
+                <DialogContent
+                    class="max-h-[90svh] overflow-y-auto rounded-2xl sm:max-w-4xl"
+                >
+                    <DialogHeader class="pr-6">
+                        <DialogTitle>Image preview</DialogTitle>
+                        <DialogDescription
+                            >{{ generation.size.replace('x', ' × ') }} pixels ·
+                            {{ generation.quality }} quality</DialogDescription
+                        >
+                    </DialogHeader>
+                    <img
+                        :src="generation.image_url!"
+                        :alt="generation.prompt"
+                        referrerpolicy="no-referrer"
+                        class="max-h-[60svh] w-full rounded-lg bg-muted object-contain"
+                        @error="brokenImage = true"
+                    />
+                    <p class="text-sm leading-relaxed wrap-anywhere">
+                        {{ generation.prompt }}
+                    </p>
+                    <p class="text-xs text-muted-foreground">
+                        Images are available for 24 hours after generation.
+                    </p>
+                </DialogContent>
+            </Dialog>
             <div
                 v-else
                 class="flex max-w-64 flex-col items-center gap-3 p-6 text-center text-muted-foreground"
             >
                 <LoaderCircle
                     v-if="pending && !generation.can_resume"
-                    class="size-7 animate-spin"
+                    class="size-7 motion-safe:animate-spin"
                 />
                 <ImageOff
                     v-else-if="
@@ -85,22 +148,40 @@ async function resumeChecking(): Promise<void> {
                 </p>
             </div>
             <span
-                class="absolute top-3 left-3 rounded-full border bg-background/95 px-2.5 py-1 text-xs font-medium capitalize"
+                class="pointer-events-none absolute top-3 left-3 rounded-full border bg-background/95 px-2.5 py-1 text-xs font-medium shadow-xs"
                 :class="{
                     'text-emerald-700 dark:text-emerald-400':
                         generation.status === 'succeeded',
-                    'text-destructive': generation.status === 'failed',
+                    'text-red-700 dark:text-red-400':
+                        generation.status === 'failed',
                 }"
                 >{{ label }}</span
             >
         </div>
-        <div class="space-y-3 p-4">
-            <p
-                class="line-clamp-3 text-sm leading-relaxed"
-                :title="generation.prompt"
-            >
-                {{ generation.prompt }}
-            </p>
+        <div class="space-y-4 p-5">
+            <details class="group">
+                <summary
+                    class="cursor-pointer list-none rounded-sm [&::-webkit-details-marker]:hidden"
+                >
+                    <span
+                        class="line-clamp-2 text-sm leading-relaxed wrap-anywhere group-open:hidden"
+                        >{{ generation.prompt }}</span
+                    >
+                    <span
+                        class="mt-1.5 block text-xs font-medium text-primary group-open:hidden"
+                        >View full prompt</span
+                    >
+                    <span
+                        class="hidden text-xs font-medium text-primary group-open:block"
+                        >Hide full prompt</span
+                    >
+                </summary>
+                <p
+                    class="mt-2 text-sm leading-relaxed wrap-anywhere whitespace-pre-wrap"
+                >
+                    {{ generation.prompt }}
+                </p>
+            </details>
             <div class="flex items-center gap-2 text-xs text-muted-foreground">
                 <span class="capitalize">{{ generation.quality }}</span
                 ><span>·</span
@@ -109,13 +190,15 @@ async function resumeChecking(): Promise<void> {
             <dl class="grid grid-cols-2 gap-3 border-t pt-3 text-xs">
                 <div>
                     <dt class="text-muted-foreground">Estimated</dt>
-                    <dd class="mt-1 font-mono">
+                    <dd class="mt-1 font-mono break-all tabular-nums">
                         {{ formatCost(generation.estimated_cost) }}
                     </dd>
                 </div>
                 <div>
                     <dt class="text-muted-foreground">Actual · USD</dt>
-                    <dd class="mt-1 font-mono font-semibold">
+                    <dd
+                        class="mt-1 font-mono font-semibold break-all tabular-nums"
+                    >
                         {{
                             generation.actual_cost === null
                                 ? '—'
@@ -126,7 +209,7 @@ async function resumeChecking(): Promise<void> {
             </dl>
             <p
                 v-if="generation.error_message"
-                class="text-xs leading-relaxed text-muted-foreground"
+                class="rounded-lg bg-muted/60 p-3 text-xs leading-relaxed wrap-anywhere text-muted-foreground"
             >
                 {{ generation.error_message }}
             </p>

@@ -4,7 +4,7 @@ import { ArrowUpRight, Check, Sparkles } from '@lucide/vue';
 import { computed } from 'vue';
 import AppLogoIcon from '@/components/AppLogoIcon.vue';
 import { Button } from '@/components/ui/button';
-import { dashboard, login, register } from '@/routes';
+import { dashboard, home, login, register } from '@/routes';
 
 const page = usePage();
 const destination = computed(() =>
@@ -15,73 +15,94 @@ const destination = computed(() =>
 </script>
 
 <template>
-    <div class="min-h-screen bg-background text-foreground">
+    <div class="min-h-screen overflow-x-clip bg-background text-foreground">
         <Head title="Imagine it. Create it." />
         <header
-            class="mx-auto flex max-w-6xl items-center justify-between px-6 py-7"
+            class="mx-auto flex max-w-6xl items-center justify-between gap-6 border-b px-5 py-6 sm:px-8"
         >
             <Link
-                href="/"
+                :href="home()"
                 class="flex items-center gap-2.5 text-xl font-semibold tracking-tight"
                 ><AppLogoIcon class="size-7" />Prism</Link
             ><Link
                 :href="page.props.auth.user ? destination : login()"
-                class="text-sm font-medium"
+                class="inline-flex min-h-11 items-center gap-2 rounded-full border bg-card px-5 text-sm font-medium transition-colors hover:bg-accent"
                 >{{ page.props.auth.user ? 'Open studio' : 'Log in' }}
                 <span aria-hidden="true">↗</span></Link
             >
         </header>
         <main
-            class="mx-auto grid max-w-6xl items-center gap-14 px-6 py-16 lg:min-h-[75vh] lg:grid-cols-2 lg:py-24"
+            class="mx-auto grid max-w-6xl items-center gap-12 px-5 py-14 sm:px-8 sm:py-20 lg:min-h-[75vh] lg:grid-cols-[1.1fr_1fr] lg:gap-16 lg:py-24"
         >
             <section>
                 <p
-                    class="mb-6 flex items-center gap-2 text-xs font-medium tracking-[0.18em] text-muted-foreground uppercase"
+                    class="mb-6 inline-flex items-center gap-2 rounded-full border border-primary/15 bg-accent/60 px-3 py-2 text-xs font-medium text-accent-foreground"
                 >
-                    <Sparkles class="size-4" />A little imagination goes a long
-                    way
+                    <Sparkles class="size-4" />A space for your imagination
                 </p>
                 <h1
-                    class="max-w-lg text-5xl leading-[1.08] font-semibold tracking-tight sm:text-6xl"
+                    class="max-w-lg text-5xl leading-[1.08] font-semibold tracking-[-0.045em] sm:text-6xl lg:text-7xl"
                 >
-                    Your next idea.<br /><span class="text-muted-foreground"
+                    Your next idea.<br /><span class="text-primary"
                         >In a new light.</span
                     >
                 </h1>
                 <p
-                    class="mt-7 max-w-md text-lg leading-relaxed text-muted-foreground"
+                    class="mt-6 max-w-md text-base leading-relaxed text-muted-foreground sm:text-lg"
                 >
                     Turn a prompt into an image. Choose your style, see the
                     estimated price, and follow every creation from start to
                     finish.
                 </p>
-                <Button as-child size="lg" class="mt-8 h-12 rounded-xl px-6"
-                    ><Link :href="destination"
-                        >{{
-                            page.props.auth.user
-                                ? 'Open your studio'
-                                : 'Start creating'
-                        }}<ArrowUpRight class="size-4" /></Link
-                ></Button>
-                <ul class="mt-8 space-y-3 text-sm text-muted-foreground">
+                <div class="mt-8 flex flex-wrap items-center gap-4">
+                    <Button
+                        as-child
+                        size="lg"
+                        class="h-12 rounded-xl px-6 shadow-sm"
+                        ><Link :href="destination"
+                            >{{
+                                page.props.auth.user
+                                    ? 'Open your studio'
+                                    : 'Start creating'
+                            }}<ArrowUpRight class="size-4" /></Link></Button
+                    ><a
+                        href="#how-it-works"
+                        class="inline-flex min-h-11 items-center px-2 text-sm font-medium text-muted-foreground underline decoration-border underline-offset-4 hover:text-foreground"
+                        >See how it works</a
+                    >
+                </div>
+                <ul
+                    class="mt-8 space-y-2.5 text-xs text-muted-foreground sm:text-sm"
+                >
                     <li class="flex gap-2">
-                        <Check class="size-4" />Clear estimates before you
-                        generate
+                        <Check
+                            class="size-4 shrink-0 text-primary"
+                            aria-hidden="true"
+                        />Clear estimates before you generate
                     </li>
                     <li class="flex gap-2">
-                        <Check class="size-4" />Exact usage-based pricing, with
-                        a 25% markup
+                        <Check
+                            class="size-4 shrink-0 text-primary"
+                            aria-hidden="true"
+                        />Exact usage-based pricing, with a 25% markup
                     </li>
                     <li class="flex gap-2">
-                        <Check class="size-4" />Failed generations are always
-                        free
+                        <Check
+                            class="size-4 shrink-0 text-primary"
+                            aria-hidden="true"
+                        />Failed generations are always free
                     </li>
                 </ul>
             </section>
             <div
-                class="relative flex aspect-square items-center justify-center overflow-hidden rounded-[2rem] border bg-linear-to-br from-indigo-100 via-violet-50 to-orange-100 dark:from-indigo-950 dark:via-slate-950 dark:to-orange-950"
+                class="relative flex aspect-square items-center justify-center overflow-hidden rounded-[2rem] border border-primary/10 bg-linear-to-br from-indigo-100 via-violet-50 to-orange-100 dark:from-indigo-950 dark:via-slate-950 dark:to-orange-950"
                 aria-hidden="true"
             >
+                <div
+                    class="absolute top-6 right-6 left-6 flex items-center justify-between text-[10px] font-medium tracking-[0.2em] text-slate-600 uppercase dark:text-slate-300"
+                >
+                    <span>Prism studio</span><span>Ideas, refracted.</span>
+                </div>
                 <div
                     class="absolute size-72 rounded-full bg-orange-200/60 blur-3xl dark:bg-orange-800/30"
                 />
@@ -140,10 +161,65 @@ const destination = computed(() =>
                 <p
                     class="absolute right-6 bottom-6 left-6 text-center text-xs tracking-wide text-slate-600 dark:text-slate-400"
                 >
-                    A space for ideas to take shape.
+                    A different perspective changes everything.
                 </p>
             </div>
         </main>
+        <section
+            id="how-it-works"
+            aria-labelledby="how-heading"
+            class="mx-auto max-w-6xl border-t px-5 py-12 sm:px-8 sm:py-16"
+        >
+            <div
+                class="mb-8 flex flex-wrap items-baseline justify-between gap-3"
+            >
+                <h2
+                    id="how-heading"
+                    class="text-2xl font-semibold tracking-tight"
+                >
+                    From a spark to something you can see.
+                </h2>
+                <p class="text-sm text-muted-foreground">Three simple steps.</p>
+            </div>
+            <ol class="grid gap-8 sm:grid-cols-3">
+                <li
+                    v-for="step in [
+                        {
+                            number: '01',
+                            title: 'Make it yours',
+                            description:
+                                'Describe your idea. Choose a format and quality, or add reference images to guide the result.',
+                        },
+                        {
+                            number: '02',
+                            title: 'Know the estimate',
+                            description:
+                                'Review the estimated price before generating. Your final cost follows actual usage.',
+                        },
+                        {
+                            number: '03',
+                            title: 'Watch it take shape',
+                            description:
+                                'Follow your image’s progress in your private studio, then open it for a closer look.',
+                        },
+                    ]"
+                    :key="step.number"
+                    class="flex gap-4"
+                >
+                    <span class="pt-1 font-mono text-xs text-primary">{{
+                        step.number
+                    }}</span>
+                    <div>
+                        <h3 class="mb-2 font-medium">{{ step.title }}</h3>
+                        <p
+                            class="text-sm leading-relaxed text-muted-foreground"
+                        >
+                            {{ step.description }}
+                        </p>
+                    </div>
+                </li>
+            </ol>
+        </section>
         <footer
             class="mx-auto flex max-w-6xl flex-wrap justify-between gap-3 border-t px-6 py-6 text-xs text-muted-foreground"
         >
