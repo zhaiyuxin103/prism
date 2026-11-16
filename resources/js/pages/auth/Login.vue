@@ -1,8 +1,5 @@
 <script setup lang="ts">
 import { Form, Head } from '@inertiajs/vue3';
-import DemoLoginAccounts, {
-    type DemoAccount,
-} from '@/components/DemoLoginAccounts.vue';
 import InputError from '@/components/InputError.vue';
 import PasswordInput from '@/components/PasswordInput.vue';
 import PasskeyVerify from '@/components/PasskeyVerify.vue';
@@ -13,7 +10,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
-import { register } from '@/routes';
+import { loginLinkLogin, register } from '@/routes';
 import { store } from '@/routes/login';
 import { request } from '@/routes/password';
 import type { TeamInvitationContext } from '@/types';
@@ -30,9 +27,9 @@ withDefaults(
         status?: string;
         canResetPassword: boolean;
         teamInvitation?: TeamInvitationContext | null;
-        demoAccounts?: DemoAccount[];
+        loginLinks?: { name: string; email: string; redirect_url: string }[];
     }>(),
-    { demoAccounts: () => [] },
+    { loginLinks: () => [] },
 );
 </script>
 
@@ -40,7 +37,31 @@ withDefaults(
     <div class="grid gap-6">
         <Head title="Log in" />
 
-        <DemoLoginAccounts :accounts="demoAccounts" />
+        <section v-if="loginLinks.length" class="grid gap-3">
+            <h2 class="text-sm font-semibold">Try a demo account</h2>
+            <Form
+                v-for="user in loginLinks"
+                :key="user.email"
+                v-bind="loginLinkLogin.form()"
+                v-slot="{ processing }"
+            >
+                <input type="hidden" name="email" :value="user.email" />
+                <input
+                    type="hidden"
+                    name="redirect_url"
+                    :value="user.redirect_url"
+                />
+                <Button
+                    type="submit"
+                    variant="outline"
+                    class="w-full"
+                    :disabled="processing"
+                >
+                    <Spinner v-if="processing" />
+                    {{ user.name }}
+                </Button>
+            </Form>
+        </section>
 
         <div
             v-if="status"

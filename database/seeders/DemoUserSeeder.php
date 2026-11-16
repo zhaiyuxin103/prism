@@ -2,7 +2,6 @@
 
 namespace Database\Seeders;
 
-use App\Actions\DemoLogin;
 use App\Actions\GenerationPricing;
 use App\Actions\Teams\CreateTeam;
 use App\Enums\CreditEntryType;
@@ -10,33 +9,30 @@ use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
-use RuntimeException;
 
 class DemoUserSeeder extends Seeder
 {
     /**
      * Run the database seeds.
      */
-    public function run(DemoLogin $demoLogin, CreateTeam $createTeam): void
+    public function run(CreateTeam $createTeam): void
     {
-        if (! $demoLogin->enabled()) {
+        if (! app()->environment(config('login-link.allowed_environments'))) {
             return;
         }
 
         DB::transaction(function () use ($createTeam): void {
-            foreach (DemoLogin::ACCOUNTS as $profile) {
-                $user = User::query()->where('email', $profile['email'])->first();
+            foreach (config('login-link.demo_users') as $email => $profile) {
+                $user = User::query()->where('email', $email)->first();
                 if ($user !== null) {
-                    throw_unless($user->is_demo, RuntimeException::class, 'A demo email is already used by a non-demo account.');
-
                     continue;
                 }
 
                 $user = new User;
                 $user->forceFill([
-                    'name' => $profile['name'], 'email' => $profile['email'],
+                    'name' => $profile['name'], 'email' => $email,
                     'password' => Str::random(64), 'email_verified_at' => now(),
-                    'is_admin' => $profile['is_admin'], 'is_demo' => true,
+                    'is_admin' => $profile['is_admin'],
                 ])->save();
                 $createTeam->handle($user, $user->name."'s Team", isPersonal: true);
 

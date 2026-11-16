@@ -12,10 +12,6 @@ use Illuminate\Support\Str;
 
 require_once __DIR__.'/../Fixtures/credits.php';
 
-beforeEach(function () {
-    config(['demo.enabled' => true]);
-});
-
 test('default seeding creates verified demo users with personal teams and balanced opening entries', function () {
     $this->seed(DatabaseSeeder::class);
 
@@ -33,7 +29,6 @@ test('default seeding creates verified demo users with personal teams and balanc
         'new-user@demo.prism.test' => ['0.000000000000000000', false],
     ] as $email => [$balance, $isAdmin]) {
         $user = User::query()->where('email', $email)->firstOrFail();
-        expect($user->is_demo)->toBeTrue();
         expect($user->is_admin)->toBe($isAdmin);
         expect($user->hasVerifiedEmail())->toBeTrue();
         expect(Hash::check('password', $user->password))->toBeFalse();
@@ -61,8 +56,8 @@ test('repeated seeding preserves balances passwords and existing activity', func
     expect($user->creditAccount->balance)->toBe('10.001000000000000000');
 });
 
-test('disabled demo mode seeds no accounts', function () {
-    config(['demo.enabled' => false]);
+test('production seeds no demo accounts', function () {
+    app()->detectEnvironment(fn (): string => 'production');
 
     $this->seed(DatabaseSeeder::class);
 
@@ -70,17 +65,17 @@ test('disabled demo mode seeds no accounts', function () {
     $this->assertDatabaseCount('credit_entries', 0);
 });
 
-test('a colliding real account is not promoted or modified and seeding rolls back', function () {
-    $user = User::factory()->unverified()->create(['email' => 'user@demo.prism.test']);
+test('existing accounts are not promoted or modified by seeding', function () {
+    $user = User::factory()->unverified()->create(['email' => 'admin@demo.prism.test']);
     $password = $user->password;
 
-    expect(fn () => $this->seed(DemoUserSeeder::class))->toThrow(RuntimeException::class, 'A demo email is already used by a non-demo account.');
+    $this->seed(DemoUserSeeder::class);
 
-    $this->assertDatabaseCount('users', 1);
-    $this->assertDatabaseCount('teams', 1);
-    $this->assertDatabaseCount('credit_entries', 0);
-    expect($user->refresh()->is_demo)->toBeFalse();
-    expect($user->is_admin)->toBeFalse();
+    $this->assertDatabaseCount('users', 4);
+    $this->assertDatabaseCount('teams', 4);
+    $this->assertDatabaseCount('credit_entries', 2);
+    $this->assertDatabaseMissing('credit_accounts', ['user_id' => $user->id]);
+    expect($user->refresh()->is_admin)->toBeFalse();
     expect($user->hasVerifiedEmail())->toBeFalse();
     expect($user->password)->toBe($password);
 });
