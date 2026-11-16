@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Form, Head, Link } from '@inertiajs/vue3';
 import { CircleCheck, CircleAlert, RefreshCw } from '@lucide/vue';
+import { computed, ref } from 'vue';
 import InputError from '@/components/InputError.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,11 +10,32 @@ import { report as reportRoute } from '@/routes/admin';
 import type { AdminReport, UserReportPage } from '@/types/admin-report';
 import { formatCost } from '@/types/generation';
 
-defineProps<{
+const props = defineProps<{
     filters: { start_date: string; end_date: string };
     report: AdminReport;
     users: UserReportPage;
 }>();
+
+const showEmptyDays = ref(false);
+const visibleDays = computed(() =>
+    props.report.days.filter((day) => {
+        if (showEmptyDays.value || day.reconciliation?.status !== 'matched') {
+            return true;
+        }
+
+        return (
+            day.amounts.generations > 0 ||
+            day.amounts.failed > 0 ||
+            day.reconciliation.provider_generations > 0 ||
+            [
+                day.amounts.user_charge,
+                day.amounts.provider_cost,
+                day.amounts.profit,
+                day.reconciliation.provider_cost,
+            ].some((amount) => /[1-9]/.test(amount))
+        );
+    }),
+);
 
 const metrics = [
     {
@@ -199,7 +221,8 @@ defineOptions({
                     v-if="report.reconciliation.checked_at"
                     class="text-xs text-muted-foreground"
                 >
-                    Checked {{ report.reconciliation.checked_at }} (UTC)
+                    Checked {{ report.reconciliation.checked_at }} (UTC).
+                    Provider usage may be cached for up to 30 seconds.
                 </p>
                 <p
                     v-if="report.unresolved_generations"
@@ -223,7 +246,33 @@ defineOptions({
                         {{ report.totals.failed }} failed at provider
                     </p>
                 </div>
-                <div class="overflow-x-auto rounded-xl border">
+                <div class="flex flex-wrap items-center justify-between gap-2">
+                    <p class="text-xs text-muted-foreground">
+                        Days with no activity on either side are hidden by
+                        default. Failed generations, differences and unchecked
+                        days remain visible.
+                    </p>
+                    <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        :aria-pressed="showEmptyDays"
+                        @click="showEmptyDays = !showEmptyDays"
+                    >
+                        {{
+                            showEmptyDays
+                                ? 'Hide empty days'
+                                : 'Show empty days'
+                        }}
+                    </Button>
+                </div>
+                <p
+                    v-if="visibleDays.length === 0"
+                    class="text-sm text-muted-foreground"
+                >
+                    No activity on either side for this date range.
+                </p>
+                <div v-else class="overflow-x-auto rounded-xl border">
                     <table
                         class="w-full text-left text-sm whitespace-nowrap [&_td]:p-3 [&_th]:p-3"
                     >
@@ -248,7 +297,7 @@ defineOptions({
                         </thead>
                         <tbody class="divide-y">
                             <tr
-                                v-for="day in report.days"
+                                v-for="day in visibleDays"
                                 :key="day.date"
                                 :class="{
                                     'bg-amber-50/60 dark:bg-amber-950/20':

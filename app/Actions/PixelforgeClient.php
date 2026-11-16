@@ -60,7 +60,7 @@ class PixelforgeClient
                 'end_date' => $endDate,
             ]));
         } catch (PixelforgeException $exception) {
-            if ($exception->retryAfter > 0) {
+            if ($exception->errorCode !== 'local_rate_limit' && $exception->retryAfter > 0) {
                 Cache::put($cooldownKey, now()->getTimestamp() + $exception->retryAfter, $exception->retryAfter);
             }
 
