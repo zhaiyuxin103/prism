@@ -4,6 +4,44 @@ An image-generation app built with Laravel 13, Inertia 3 and Vue 3 for the [Pixe
 
 The provider is simulated: no real AI generation or payment processing takes place. Administrator reports include daily and per-user financial totals with provider reconciliation. Personal credit balances support simulated purchases, reservations and exact settlement.
 
+**[Live demo](https://prism-production-xduavr.laravel.cloud/login)** · **[Assessment brief](https://pixelforge.promptedit.dev/assessment)** · **[Provider API docs](https://pixelforge.promptedit.dev/docs)**
+
+## Review the assessment
+
+Open the live demo and choose an account under **Try a demo account**. No password or email verification is needed for these accounts. Both stretch goals are implemented: the admin report and credit balances with simulated purchases.
+
+| Login button     | Starting credits (USD) | What to review                                        |
+| ---------------- | ---------------------: | ----------------------------------------------------- |
+| Demo Admin       |                    $25 | Generation flow and the **Admin report** sidebar item |
+| Demo User        |                    $10 | Generation flow, private history and credit activity  |
+| Demo Low Balance |                 $0.001 | Insufficient-credit handling                          |
+| Demo New User    |                     $0 | Empty state and simulated credit purchases            |
+
+These are shared accounts. Balances and history change as people use them; the amounts above are their initial balances, not a reset guarantee. Sign out to switch accounts. You can also register and verify your own account for a separate history; new registrations start with zero credits and have no admin access.
+
+Suggested walkthrough:
+
+1. Sign in as **Demo User**. In **Studio**, enter a prompt such as `A lighthouse at dusk [succeed]`, choose size and quality, and request an estimate. Review the estimate and upper estimate before submitting, then watch the status and final charge update in history.
+2. Try a prompt containing `[fail]`. Once it fails, its charge is zero and its credit reservation is released. `[duplicate] [succeed]` exercises repeated webhook delivery without a second settlement; `[slow]` makes the processing state easier to observe.
+3. Open **Credits** to inspect purchases, reservations and settlement entries. With a zero-balance account, request an estimate and check that generation is blocked until you buy simulated credits. Purchases require no payment details.
+4. Sign out, choose **Demo Admin**, and open **Admin report**. Review daily and per-user spend, provider costs, profit and reconciliation over a UTC date range.
+
+The demo key was also used for earlier local testing. Historical provider totals therefore include records outside the deployed database, and the admin report can show a real difference. The [verification snapshot](#verification-snapshot) records the combined comparison; reconciliation does not alter local charges to hide differences. Images use provider URLs that expire after 24 hours, so older images may be unavailable while their history and charges remain visible.
+
+## Code guide
+
+| Area                                    | Entry points                                                                                                                                                                                                               |
+| --------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Estimates and exact billing             | [GenerationPricing](app/Actions/GenerationPricing.php), [CreateGeneration](app/Actions/CreateGeneration.php)                                                                                                               |
+| Provider requests, retries and recovery | [PixelforgeClient](app/Actions/PixelforgeClient.php), [SyncGeneration](app/Jobs/SyncGeneration.php), [RecoverGenerations](app/Console/Commands/RecoverGenerations.php)                                                     |
+| Webhook verification and settlement     | [PixelforgeWebhookController](app/Http/Controllers/PixelforgeWebhookController.php), [ProcessPixelforgeWebhook](app/Jobs/ProcessPixelforgeWebhook.php), [ApplyGenerationSnapshot](app/Actions/ApplyGenerationSnapshot.php) |
+| Credit balances and reservations        | [CreditLedger](app/Actions/CreditLedger.php)                                                                                                                                                                               |
+| Reports and provider reconciliation     | [BuildAdminReport](app/Actions/BuildAdminReport.php), [FetchPixelforgeUsage](app/Actions/FetchPixelforgeUsage.php)                                                                                                         |
+| User interface                          | [Studio](resources/js/pages/Dashboard.vue), [Credits](resources/js/pages/Credits.vue), [Admin report](resources/js/pages/AdminReport.vue)                                                                                  |
+| Regression coverage                     | [Feature tests](tests/Feature), [frontend tests](resources/js)                                                                                                                                                             |
+
+The sections below explain [setup](#local-setup), [billing choices](#money-and-estimates), [asynchronous processing](#asynchronous-processing), [credits](#balances-and-simulated-purchases), [reports](#admin-report), [checks](#tests-and-checks) and [deployment](#laravel-cloud).
+
 ## Local setup
 
 Requirements: PHP 8.5 with BCMath, Composer, Node.js 22.18+ or 24.11+, and npm. SQLite is the local default; PostgreSQL is suitable for deployment.
@@ -11,25 +49,27 @@ Requirements: PHP 8.5 with BCMath, Composer, Node.js 22.18+ or 24.11+, and npm. 
 ```sh
 composer install
 cp .env.example .env
-php artisan key:generate
+php artisan key:generate --no-interaction
 touch database/database.sqlite
-php artisan migrate
+php artisan migrate --no-interaction
+php artisan db:seed --no-interaction
 npm ci
 npm run build
 ```
 
-Set `PIXELFORGE_API_KEY` and `PIXELFORGE_WEBHOOK_SECRET` in `.env`. Register an account in Prism and verify its email. The default `MAIL_MAILER=log` writes verification emails to `storage/logs/laravel.log`; configure SMTP when deploying.
+Set `APP_URL` to your local application's URL, and set `PIXELFORGE_API_KEY` and `PIXELFORGE_WEBHOOK_SECRET` in `.env`. These credentials belong on the server, never in frontend code. Seeding creates the four verified demo accounts above, each with a personal team and an opening balance. It does not create sample generations or reset existing accounts when rerun.
 
-Run these in separate terminals:
+Demo login is enabled only in `local`, `testing` and `demo` environments, and only on the host configured in `APP_URL`. In `production`, seeding creates no demo accounts and quick login is disabled. To test regular registration, create your own account and verify its email. The default `MAIL_MAILER=log` writes verification emails to `storage/logs/laravel.log`.
+
+With Laravel Herd serving the app, run these in separate terminals:
 
 ```sh
-php artisan serve
 npm run dev
 php artisan queue:work database --queue=default --sleep=1 --tries=3 --timeout=30
 php artisan schedule:work
 ```
 
-Laravel Herd can serve the app instead of `artisan serve`. Use `QUEUE_CONNECTION=database`, `CACHE_STORE=database` and `SESSION_DRIVER=database`. Delayed work needs an asynchronous queue; `sync` does not provide delayed retries.
+Open the site's Herd URL. Without Herd, configure your PHP web server with `public/` as its document root. The Vite process is optional if you use the built assets from `npm run build`; the queue worker and scheduler are needed for background processing and recovery. Use `QUEUE_CONNECTION=database`, `CACHE_STORE=database` and `SESSION_DRIVER=database`. Delayed work needs an asynchronous queue; `sync` does not provide delayed retries.
 
 Expose the local app through a public HTTPS tunnel. Set the Pixelforge key's webhook URL to `https://YOUR-PUBLIC-HOST/webhooks/pixelforge`. The endpoint must respond directly, without an HTTP-to-HTTPS redirect. Use a separate API key and signing secret for each environment. Account rate limits are still shared across those keys.
 
@@ -122,13 +162,44 @@ Run the build before or after PHP tests, not concurrently: the build replaces as
 
 Regression coverage includes duplicate/out-of-order and early webhooks, expired quotes, upstream failures, high-precision settlement, initial money schema and rollback/rebuild, capacity waiting, lost responses, delayed retries, paused recovery and owner isolation.
 
+### Verification snapshot
+
+<details>
+<summary>Deployed app checks recorded on November 17, 2026 (Asia/Shanghai)</summary>
+
+The deployed app was checked through the browser, followed by read-only production database queries and a `GET /v1/usage` request using the deployed API key.
+
+| Scenario                | Generation ID prefix | Result                                  | Provider cost (USD) | User charge (USD) |
+| ----------------------- | -------------------- | --------------------------------------- | ------------------: | ----------------: |
+| `[fail]`                | `fc92e931`           | Failed; one zero-cost settlement        |                   0 |                 0 |
+| `[duplicate] [succeed]` | `588c2044`           | Succeeded; image loaded; one settlement |         0.012110000 |       0.015137500 |
+
+For the duplicate scenario, the processing and success events each had one stored event record, both marked `processed` without errors. All ten stored events across the five production generations were processed without errors. This verifies the application-side outcome; individual delivery attempts in the provider dashboard were not independently inspected.
+
+The usage query covered **November 16–17, 2026 UTC**. All successful generations in this snapshot were billed on November 16 UTC; November 17 had zero usage. The deployed key's usage includes six earlier successful local test generations retained in the old SQLite database, so it must not be compared with production-only totals without accounting for that history.
+
+| Source                  | Successful generations | Provider cost (USD) |
+| ----------------------- | ---------------------: | ------------------: |
+| Production PostgreSQL   |                      4 |         0.493597500 |
+| Historical local SQLite |                      6 |         0.632780000 |
+| Combined records        |                     10 |         1.126377500 |
+| Pixelforge usage        |                     10 |         1.126377500 |
+
+The combined records matched usage exactly in both cost and all four token categories: 143 input-text tokens, 1,530 input-image tokens, 22,670 output tokens and 16,285 reasoning tokens. Each production success was recalculated from its captured rates; production user charges totaled **$0.616996875**, exactly 125% of provider costs. The failed generation contributed no cost or charge.
+
+These are verification-time totals, not live counters. For a new environment, use a dedicated provider key. If the current key is replaced, reconcile pre-switch and post-switch records against their respective keys rather than comparing all historical records with the new key's usage.
+
+</details>
+
 ## Laravel Cloud
 
 See [Cloud deployment settings](https://laravel.com/cloud/docs/environments) and [task scheduling](https://laravel.com/cloud/docs/scheduled-tasks).
 
+The live demo uses PostgreSQL for application data and **Redis for queues and cache**. Its webhook endpoint is `https://prism-production-xduavr.laravel.cloud/webhooks/pixelforge`. It is a dedicated demo deployment with quick login enabled; the production settings below disable that access.
+
 1. Create an application from the repository, select the intended branch, and use PHP 8.5 and a compatible Node version.
-2. Attach a persistent database, such as PostgreSQL. Let Cloud inject its connection variables; do not carry the local SQLite configuration into production.
-3. Configure the environment variables below. Use a new Pixelforge key for this environment.
+2. Attach PostgreSQL and a Redis-compatible cache. Let Cloud inject their connection variables; do not carry local database or Redis credentials into production.
+3. Configure the environment variables below. Use a dedicated Pixelforge key for new environments; the current demo's historical usage is documented above.
 4. Set the build and deploy commands, configure a queue worker, and enable the App cluster's **Scheduler** toggle. Start with one replica; multiple scheduler replicas need `onOneServer` coordination.
 5. Deploy, set the key's webhook URL to the deployed HTTPS domain plus `/webhooks/pixelforge`, and send a signed test event from Pixelforge.
 6. Register and verify a user. Check a successful generation, a `[fail]` generation, and duplicate webhook delivery. Confirm final charges and the environment key's usage report.
@@ -151,10 +222,12 @@ php artisan migrate --force
 Background worker command:
 
 ```sh
-php artisan queue:work database --queue=default --sleep=1 --tries=3 --timeout=30
+php artisan queue:work redis --sleep=1 --tries=3 --timeout=30
 ```
 
-Cloud restarts workers on deployment. Enabling Scheduler runs `schedule:run` every minute; no separate `schedule:work` process is needed there. The default database queue reservation timeout is 90 seconds, longer than the worker timeout. Keep cache shared between the app and workers. No object storage is required for the current implementation, which displays the provider's signed image URLs directly.
+The worker connection must match `QUEUE_CONNECTION=redis`. A worker listening on `database` will not consume tasks dispatched to Redis. The command above uses the configured Redis queue name. Keep the app and worker connected to the same Redis queue and shared cache.
+
+Cloud restarts workers on deployment. Enabling Scheduler runs `schedule:run` every minute; no separate `schedule:work` process is needed there. Keep the Redis queue reservation timeout (`retry_after`, 90 seconds by default) longer than the 30-second worker timeout. No object storage is required for the current implementation, which displays the provider's signed image URLs directly.
 
 | Variable                                                   | Production value / purpose                                         |
 | ---------------------------------------------------------- | ------------------------------------------------------------------ |
@@ -162,10 +235,11 @@ Cloud restarts workers on deployment. Enabling Scheduler runs `schedule:run` eve
 | `APP_ENV`                                                  | `production`                                                       |
 | `APP_DEBUG`                                                | `false`                                                            |
 | `APP_KEY`                                                  | Stable production key; generate once, never rotate on every deploy |
-| `APP_URL`                                                  | Public HTTPS application URL                                       |
+| `APP_URL`                                                  | `https://prism-production-xduavr.laravel.cloud`                    |
 | `DB_*`                                                     | Cloud-injected database connection values                          |
-| `QUEUE_CONNECTION`                                         | `database`                                                         |
-| `CACHE_STORE`                                              | `database`                                                         |
+| `REDIS_*`                                                  | Cloud-injected Redis connection values                             |
+| `QUEUE_CONNECTION`                                         | `redis`                                                            |
+| `CACHE_STORE`                                              | `redis`                                                            |
 | `SESSION_DRIVER`                                           | `database`                                                         |
 | `SESSION_SECURE_COOKIE`                                    | `true`                                                             |
 | `LOG_CHANNEL`                                              | `stderr`                                                           |
@@ -179,4 +253,4 @@ Cloud restarts workers on deployment. Enabling Scheduler runs `schedule:run` eve
 | `MAIL_FROM_ADDRESS`, `MAIL_FROM_NAME`                      | Verified sender address and `Prism`                                |
 | `VITE_APP_NAME`                                            | `Prism`                                                            |
 
-Keep secrets in Cloud environment settings, never in the repository. Redeploy after environment changes. The app's core implementation is ready for deployment; this README does not assert that a public environment has been deployed.
+Keep secrets in Cloud environment settings, never in the repository. Redeploy after environment or worker configuration changes. The live demo and production verification snapshot are documented above.
