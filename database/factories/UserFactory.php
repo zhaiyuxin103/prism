@@ -66,6 +66,11 @@ class UserFactory extends Factory
         ]);
     }
 
+    public function admin(): static
+    {
+        return $this->state(fn (): array => ['is_admin' => true]);
+    }
+
     /**
      * Indicate that the model has two-factor authentication configured.
      */

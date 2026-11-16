@@ -2,7 +2,7 @@
 
 An image-generation app built with Laravel 13, Inertia 3 and Vue 3 for the [Pixelforge assessment](https://pixelforge.promptedit.dev/assessment). Users can request an estimate, submit a generation, and view private history with live status, images and final charges.
 
-The provider is simulated: no real AI generation or payment processing takes place. Admin reports and credit balances are not implemented.
+The provider is simulated: no real AI generation or payment processing takes place. Administrator reports include daily and per-user financial totals with provider reconciliation. Credit balances are not implemented.
 
 ## Local setup
 
@@ -72,6 +72,28 @@ Local request-budget waits and provider frequency/concurrency limits do not cons
 Overload and other recoverable errors have bounded attempts and backoff. A network timeout leaves the submission **uncertain**: it may already exist at the provider. Exhausting retries pauses checking; it does not create a zero-cost terminal failure. Even a later rejection is not treated as proof that the original timed-out request never existed. This deliberately favors recoverable uncertainty over a potentially incorrect settlement. A late webhook can still finish a paused generation.
 
 The page refreshes every three seconds while checks are active, or every 30 seconds when only paused generations remain. This page refresh does not restart provider polling. Signed image URLs expire after 24 hours; history and charges remain available.
+
+## Admin report
+
+Platform administrators can open **Admin report** from the sidebar. Access requires a verified email and `users.is_admin`; team roles do not grant financial-report access. New users are not administrators.
+
+After running migrations, grant or revoke access with:
+
+```sh
+php artisan users:admin                       # show recent users, search and select
+php artisan users:admin operator@example.com  # grant by email (case-insensitive)
+php artisan users:admin 42                    # grant by user ID
+php artisan users:admin 42 --revoke            # revoke by ID or email
+php artisan users:admin --revoke              # search and select an account to revoke
+```
+
+The interactive picker searches names, emails and exact IDs, shows current admin status, and offers cancellation. For scripts, pass an ID or email with `--no-interaction`; omitting it fails without changing permissions. The command only updates existing accounts.
+
+Reports cover an inclusive UTC date range of up to 92 days (30 by default). Daily totals and paginated user summaries include credit spend, provider cost and profit; expand a user to see daily figures. They use provider completion time and settled amounts, not submission time or current pricing. Failed provider generations are free. Pre-acceptance rejections have no provider completion date and are excluded. Deleted users' costs remain in a separate aggregate.
+
+Each refresh compares local costs and successful-generation counts with `GET /v1/usage` for the configured key, by day as well as for the whole period. Differences are local minus provider; opposing daily differences cannot cancel into a matched report. Empty days remain visible. Provider failures or incomplete/inconsistent responses leave local figures available with an unavailable reconciliation status. Requests share the generation client's budget and honor provider `Retry-After` without immediate retries.
+
+Keep one dedicated API key per environment/database. The report compares this database's settlements with the **currently configured key**; it does not reconstruct historical key assignments. Rotating keys or sharing a key across databases can produce differences. Pending or delayed generation results may also produce temporary differences, especially today. Refresh after those results settle. Reconciliation only reports differences; it never overwrites settlements to force a match.
 
 ## Tests and checks
 
