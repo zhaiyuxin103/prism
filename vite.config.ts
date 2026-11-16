@@ -77,4 +77,8 @@ export default defineConfig({
             stylesheet: 'resources/css/app.css',
         },
     },
+    staged: {
+        '*': 'vp check --fix --no-error-on-unmatched-pattern',
+        '!(*.blade|_ide_helper_models).php': 'vendor/bin/pint',
+    },
 });
