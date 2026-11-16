@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Link, usePage } from '@inertiajs/vue3';
-import { BookOpen, LayoutGrid } from '@lucide/vue';
+import { BookOpen, ChartNoAxesCombined, LayoutGrid } from '@lucide/vue';
 import { computed } from 'vue';
 import AppLogo from '@/components/AppLogo.vue';
 import NavFooter from '@/components/NavFooter.vue';
@@ -17,6 +17,7 @@ import {
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
 import { dashboard } from '@/routes';
+import { report } from '@/routes/admin';
 import type { NavItem } from '@/types';
 
 const page = usePage();
@@ -26,6 +27,9 @@ const dashboardUrl = computed(() =>
 );
 
 const mainNavItems = computed<NavItem[]>(() => [
+    ...(page.props.auth.canViewAdminReport
+        ? [{ title: 'Admin report', href: report(), icon: ChartNoAxesCombined }]
+        : []),
     {
         title: 'Studio',
         href: dashboardUrl.value,

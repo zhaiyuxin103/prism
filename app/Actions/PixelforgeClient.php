@@ -45,6 +45,29 @@ class PixelforgeClient
         return $this->decode($this->authenticated()->get('/generations/'.rawurlencode($id)));
     }
 
+    /** @return array<string, mixed> */
+    public function usage(string $startDate, string $endDate): array
+    {
+        $cooldownKey = 'pixelforge:usage-cooldown:'.hash('sha256', config('services.pixelforge.base_url').'|'.config('services.pixelforge.api_key'));
+        $retryAt = (int) Cache::get($cooldownKey, 0);
+        if ($retryAt > now()->getTimestamp()) {
+            throw new PixelforgeException('rate_limit_exceeded', 'Usage is temporarily unavailable.', true, true, $retryAt - now()->getTimestamp());
+        }
+
+        try {
+            return $this->decode($this->authenticated()->get('/usage', [
+                'start_date' => $startDate,
+                'end_date' => $endDate,
+            ]));
+        } catch (PixelforgeException $exception) {
+            if ($exception->retryAfter > 0) {
+                Cache::put($cooldownKey, now()->getTimestamp() + $exception->retryAfter, $exception->retryAfter);
+            }
+
+            throw $exception;
+        }
+    }
+
     private function request(): PendingRequest
     {
         return Http::baseUrl(rtrim(config('services.pixelforge.base_url'), '/'))
