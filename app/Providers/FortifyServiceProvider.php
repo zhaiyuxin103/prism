@@ -10,6 +10,7 @@ use App\Http\Responses\RegisterResponse;
 use App\Http\Responses\TwoFactorLoginResponse;
 use App\Http\Responses\VerifyEmailResponse;
 use App\Models\TeamInvitation;
+use App\Models\User;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
@@ -66,6 +67,20 @@ class FortifyServiceProvider extends ServiceProvider
             'canResetPassword' => Features::enabled(Features::resetPasswords()),
             'status' => $request->session()->get('status'),
             'teamInvitation' => $this->teamInvitation($request),
+            'loginLinks' => function () use ($request) {
+                if (! app()->environment(config('login-link.allowed_environments'))
+                    || ! in_array($request->getHost(), config('login-link.allowed_hosts'), true)) {
+                    return [];
+                }
+
+                return User::query()->whereIn('email', array_keys(config('login-link.demo_users')))
+                    ->whereHas('currentTeam')->with('currentTeam')->orderBy('id')->get()
+                    ->map(fn (User $user): array => [
+                        'name' => $user->name,
+                        'email' => $user->email,
+                        'redirect_url' => route('dashboard', ['current_team' => $user->currentTeam->slug]),
+                    ]);
+            },
         ]));
 
         Fortify::resetPasswordView(fn (Request $request) => Inertia::render('auth/ResetPassword', [

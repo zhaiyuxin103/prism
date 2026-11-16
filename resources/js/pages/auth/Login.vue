@@ -10,7 +10,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
-import { register } from '@/routes';
+import { loginLinkLogin, register } from '@/routes';
 import { store } from '@/routes/login';
 import { request } from '@/routes/password';
 import type { TeamInvitationContext } from '@/types';
@@ -22,110 +22,142 @@ defineOptions({
     },
 });
 
-defineProps<{
-    status?: string;
-    canResetPassword: boolean;
-    teamInvitation?: TeamInvitationContext | null;
-}>();
+withDefaults(
+    defineProps<{
+        status?: string;
+        canResetPassword: boolean;
+        teamInvitation?: TeamInvitationContext | null;
+        loginLinks?: { name: string; email: string; redirect_url: string }[];
+    }>(),
+    { loginLinks: () => [] },
+);
 </script>
 
 <template>
-    <Head title="Log in" />
+    <div class="grid gap-6">
+        <Head title="Log in" />
 
-    <div
-        v-if="status"
-        class="mb-4 text-center text-sm font-medium text-green-600"
-    >
-        {{ status }}
-    </div>
-
-    <TeamInvitationAlert
-        v-if="teamInvitation"
-        :invitation="teamInvitation"
-        action="Log in"
-    />
-
-    <PasskeyVerify />
-
-    <Form
-        v-bind="store.form()"
-        :reset-on-success="['password']"
-        v-slot="{ errors, processing }"
-        class="flex flex-col gap-6"
-    >
-        <div class="grid gap-6">
-            <div class="grid gap-2">
-                <Label for="email">Email address</Label>
-                <Input
-                    id="email"
-                    type="email"
-                    name="email"
-                    required
-                    v-focus
-                    :tabindex="1"
-                    autocomplete="email"
-                    placeholder="email@example.com"
+        <section v-if="loginLinks.length" class="grid gap-3">
+            <h2 class="text-sm font-semibold">Try a demo account</h2>
+            <Form
+                v-for="user in loginLinks"
+                :key="user.email"
+                v-bind="loginLinkLogin.form()"
+                v-slot="{ processing }"
+            >
+                <input type="hidden" name="email" :value="user.email" />
+                <input
+                    type="hidden"
+                    name="redirect_url"
+                    :value="user.redirect_url"
                 />
-                <InputError :message="errors.email" />
-            </div>
+                <Button
+                    type="submit"
+                    variant="outline"
+                    class="w-full"
+                    :disabled="processing"
+                >
+                    <Spinner v-if="processing" />
+                    {{ user.name }}
+                </Button>
+            </Form>
+        </section>
 
-            <div class="grid gap-2">
-                <div class="flex items-center justify-between">
-                    <Label for="password">Password</Label>
-                    <TextLink
-                        v-if="canResetPassword"
-                        :href="request()"
-                        class="text-sm"
-                        :tabindex="5"
-                    >
-                        Forgot password?
-                    </TextLink>
+        <div
+            v-if="status"
+            class="mb-4 text-center text-sm font-medium text-green-600"
+        >
+            {{ status }}
+        </div>
+
+        <TeamInvitationAlert
+            v-if="teamInvitation"
+            :invitation="teamInvitation"
+            action="Log in"
+        />
+
+        <PasskeyVerify />
+
+        <Form
+            v-bind="store.form()"
+            :reset-on-success="['password']"
+            v-slot="{ errors, processing }"
+            class="flex flex-col gap-6"
+        >
+            <div class="grid gap-6">
+                <div class="grid gap-2">
+                    <Label for="email">Email address</Label>
+                    <Input
+                        id="email"
+                        type="email"
+                        name="email"
+                        required
+                        v-focus
+                        :tabindex="1"
+                        autocomplete="email"
+                        placeholder="email@example.com"
+                    />
+                    <InputError :message="errors.email" />
                 </div>
-                <PasswordInput
-                    id="password"
-                    name="password"
-                    required
-                    :tabindex="2"
-                    autocomplete="current-password"
-                    placeholder="Password"
-                />
-                <InputError :message="errors.password" />
+
+                <div class="grid gap-2">
+                    <div class="flex items-center justify-between">
+                        <Label for="password">Password</Label>
+                        <TextLink
+                            v-if="canResetPassword"
+                            :href="request()"
+                            class="text-sm"
+                            :tabindex="5"
+                        >
+                            Forgot password?
+                        </TextLink>
+                    </div>
+                    <PasswordInput
+                        id="password"
+                        name="password"
+                        required
+                        :tabindex="2"
+                        autocomplete="current-password"
+                        placeholder="Password"
+                    />
+                    <InputError :message="errors.password" />
+                </div>
+
+                <div class="flex items-center justify-between">
+                    <Label for="remember" class="flex items-center space-x-3">
+                        <Checkbox id="remember" name="remember" :tabindex="3" />
+                        <span>Remember me</span>
+                    </Label>
+                </div>
+
+                <Button
+                    type="submit"
+                    class="mt-4 w-full"
+                    :tabindex="4"
+                    :disabled="processing"
+                    data-test="login-button"
+                >
+                    <Spinner v-if="processing" />
+                    Log in
+                </Button>
             </div>
 
-            <div class="flex items-center justify-between">
-                <Label for="remember" class="flex items-center space-x-3">
-                    <Checkbox id="remember" name="remember" :tabindex="3" />
-                    <span>Remember me</span>
-                </Label>
+            <div class="text-center text-sm text-muted-foreground">
+                Don't have an account?
+                <TextLink
+                    :href="
+                        register({
+                            query: {
+                                invitation: teamInvitation?.code,
+                            },
+                        })
+                    "
+                    :tabindex="5"
+                    data-test="register-link"
+                >
+                    Sign up
+                </TextLink>
             </div>
-
-            <Button
-                type="submit"
-                class="mt-4 w-full"
-                :tabindex="4"
-                :disabled="processing"
-                data-test="login-button"
-            >
-                <Spinner v-if="processing" />
-                Log in
-            </Button>
-        </div>
-
-        <div class="text-center text-sm text-muted-foreground">
-            Don't have an account?
-            <TextLink
-                :href="
-                    register({
-                        query: {
-                            invitation: teamInvitation?.code,
-                        },
-                    })
-                "
-                :tabindex="5"
-                data-test="register-link"
-            >
-                Sign up
-            </TextLink>
-        </div>
-    </Form>
+        </Form>
+    </div>
 </template>
