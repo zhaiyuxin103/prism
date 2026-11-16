@@ -24,6 +24,8 @@ use Illuminate\Support\Str;
  * @property Carbon|null $updated_at
  * @property-read Team $team
  * @property-read User $inviter
+ *
+ * @mixin IdeHelperTeamInvitation
  */
 #[Fillable(['team_id', 'email', 'role', 'invited_by', 'expires_at', 'accepted_at'])]
 class TeamInvitation extends Model

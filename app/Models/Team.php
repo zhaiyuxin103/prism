@@ -25,6 +25,8 @@ use Illuminate\Support\Carbon;
  * @property-read Collection<int, TeamInvitation> $invitations
  * @property-read Collection<int, Membership> $memberships
  * @property-read Collection<int, User> $members
+ *
+ * @mixin IdeHelperTeam
  */
 #[Fillable(['name', 'slug', 'is_personal'])]
 class Team extends Model

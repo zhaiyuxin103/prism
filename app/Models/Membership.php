@@ -17,6 +17,8 @@ use Illuminate\Support\Carbon;
  * @property Carbon|null $updated_at
  * @property-read Team $team
  * @property-read User $user
+ *
+ * @mixin IdeHelperMembership
  */
 #[Fillable(['team_id', 'user_id', 'role'])]
 class Membership extends Pivot

@@ -11,6 +11,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property string $provider_cost
  * @property string $user_charge
  * @property string $outcome
+ *
+ * @mixin IdeHelperGenerationSettlement
  */
 class GenerationSettlement extends Model
 {

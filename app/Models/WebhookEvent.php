@@ -16,6 +16,8 @@ use Illuminate\Support\Carbon;
  * @property string $processing_status
  * @property int $attempts
  * @property Carbon|null $next_attempt_at
+ *
+ * @mixin IdeHelperWebhookEvent
  */
 class WebhookEvent extends Model
 {

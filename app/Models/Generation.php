@@ -40,6 +40,8 @@ use Illuminate\Support\Carbon;
  * @property Carbon|null $capacity_wait_started_at
  * @property Carbon $created_at
  * @property-read GenerationSettlement|null $settlement
+ *
+ * @mixin IdeHelperGeneration
  */
 class Generation extends Model
 {
