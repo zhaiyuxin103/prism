@@ -5,17 +5,11 @@ namespace App\Models;
 use Database\Factories\WebhookEventFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Carbon;
 
 /**
- * @property int $id
- * @property string $provider_event_id
- * @property string $event_type
- * @property string|null $provider_generation_id
  * @property array<string, mixed> $payload
- * @property string $processing_status
- * @property int $attempts
- * @property Carbon|null $next_attempt_at
+ *
+ * @mixin IdeHelperWebhookEvent
  */
 class WebhookEvent extends Model
 {

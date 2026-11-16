@@ -19,6 +19,7 @@
         "resend/resend-php": "^1.18"
     },
     "require-dev": {
+        "barryvdh/laravel-ide-helper": "^3.7",
         "fakerphp/faker": "^1.24",
         "larastan/larastan": "^3.9",
         "laravel/boost": "^2.2",
@@ -84,7 +85,15 @@
         ],
         "post-update-cmd": [
             "@php artisan vendor:publish --tag=laravel-assets --ansi --force",
-            "@php artisan boost:update --ansi"
+            "@php artisan boost:update --ansi",
+            "@php artisan ide-helper:generate --no-interaction",
+            "@php -d memory_limit=512M artisan ide-helper:meta --no-interaction"
+        ],
+        "ide-helper": [
+            "@php artisan ide-helper:generate --no-interaction",
+            "@php -d memory_limit=512M artisan ide-helper:meta --no-interaction",
+            "@php artisan ide-helper:models -R -M --no-interaction",
+            "pint app/Models"
         ],
         "post-root-package-install": [
             "@php -r \"file_exists('.env') || copy('.env.example', '.env');\""
