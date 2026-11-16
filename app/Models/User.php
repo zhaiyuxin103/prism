@@ -16,6 +16,8 @@ use Laravel\Fortify\PasskeyAuthenticatable;
 use Laravel\Fortify\TwoFactorAuthenticatable;
 
 /**
+ * @property bool $is_demo
+ *
  * @mixin IdeHelperUser
  */
 #[Fillable(['name', 'email', 'password', 'current_team_id'])]
@@ -40,6 +42,7 @@ class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
     {
         return [
             'is_admin' => 'boolean',
+            'is_demo' => 'boolean',
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'two_factor_confirmed_at' => 'datetime',

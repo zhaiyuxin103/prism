@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Actions\DemoLogin;
 use App\Actions\Fortify\CreateNewUser;
 use App\Actions\Fortify\ResetUserPassword;
 use App\Http\Responses\LoginResponse;
@@ -41,10 +42,10 @@ class FortifyServiceProvider extends ServiceProvider
     /**
      * Bootstrap any application services.
      */
-    public function boot(): void
+    public function boot(DemoLogin $demoLogin): void
     {
         $this->configureActions();
-        $this->configureViews();
+        $this->configureViews($demoLogin);
         $this->configureRateLimiting();
     }
 
@@ -60,12 +61,13 @@ class FortifyServiceProvider extends ServiceProvider
     /**
      * Configure Fortify views.
      */
-    private function configureViews(): void
+    private function configureViews(DemoLogin $demoLogin): void
     {
         Fortify::loginView(fn (Request $request) => Inertia::render('auth/Login', [
             'canResetPassword' => Features::enabled(Features::resetPasswords()),
             'status' => $request->session()->get('status'),
             'teamInvitation' => $this->teamInvitation($request),
+            'demoAccounts' => fn () => $demoLogin->accounts($request),
         ]));
 
         Fortify::resetPasswordView(fn (Request $request) => Inertia::render('auth/ResetPassword', [
