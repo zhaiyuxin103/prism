@@ -1,0 +1,52 @@
+<?php
+
+declare(strict_types=1);
+
+use Rector\Config\RectorConfig;
+use RectorLaravel\Rector\Class_\AddHasFactoryToModelsRector;
+use RectorLaravel\Rector\Coalesce\ApplyDefaultInsteadOfNullCoalesceRector;
+use RectorLaravel\Rector\FuncCall\AppToResolveRector;
+use RectorLaravel\Rector\FuncCall\DispatchNonShouldQueueToDispatchSyncRector;
+use RectorLaravel\Rector\MethodCall\EloquentWhereRelationTypeHintingParameterRector;
+use RectorLaravel\Rector\MethodCall\EloquentWhereTypeHintClosureParameterRector;
+use RectorLaravel\Rector\StaticCall\DispatchToHelperFunctionsRector;
+use RectorLaravel\Set\LaravelSetList;
+
+return RectorConfig::configure()
+    ->withPaths([
+        __DIR__.'/app',
+        __DIR__.'/bootstrap/app.php',
+        __DIR__.'/bootstrap/providers.php',
+        __DIR__.'/config',
+        __DIR__.'/database',
+        __DIR__.'/routes',
+        __DIR__.'/tests',
+    ])
+    ->withComposerBased(laravel: true)
+    ->withSets([
+        LaravelSetList::LARAVEL_ARRAYACCESS_TO_METHOD_CALL,
+        LaravelSetList::LARAVEL_CODE_QUALITY,
+        LaravelSetList::LARAVEL_COLLECTION,
+        LaravelSetList::LARAVEL_CONTAINER_STRING_TO_FULLY_QUALIFIED_NAME,
+        LaravelSetList::LARAVEL_FACADE_ALIASES_TO_FULL_NAMES,
+        LaravelSetList::LARAVEL_FACTORIES,
+        LaravelSetList::LARAVEL_IF_HELPERS,
+        LaravelSetList::LARAVEL_TESTING,
+        LaravelSetList::LARAVEL_TYPE_DECLARATIONS,
+        LaravelSetList::LARAVEL_ELOQUENT_MAGIC_METHOD_TO_QUERY_BUILDER,
+    ])
+    ->withSkip([
+        // Some models, such as Membership, do not have a factory.
+        AddHasFactoryToModelsRector::class,
+        // Preserve the existing app(Foo::class) convention.
+        AppToResolveRector::class,
+        // A configured null must still fall back to the right-hand value.
+        ApplyDefaultInsteadOfNullCoalesceRector::class,
+        // Preserve PHPStan's inferred Builder<TModel> closure types.
+        EloquentWhereRelationTypeHintingParameterRector::class,
+        EloquentWhereTypeHintClosureParameterRector::class,
+        // Preserve queued self-dispatch and its delay, connection, and queue settings.
+        DispatchToHelperFunctionsRector::class,
+        DispatchNonShouldQueueToDispatchSyncRector::class,
+    ])
+    ->withImportNames(importShortClasses: false, removeUnusedImports: false);

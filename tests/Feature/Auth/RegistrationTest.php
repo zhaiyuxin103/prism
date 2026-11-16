@@ -43,6 +43,6 @@ test('new users can register', function () {
 
     $this->assertAuthenticated();
 
-    $user = User::where('email', 'test@example.com')->first();
+    $user = User::query()->where('email', 'test@example.com')->first();
     $response->assertRedirect(route('dashboard'));
 });

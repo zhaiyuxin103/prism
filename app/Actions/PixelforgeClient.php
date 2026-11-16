@@ -54,14 +54,10 @@ class PixelforgeClient
 
     private function authenticated(): PendingRequest
     {
-        if (! $this->configured()) {
-            throw new PixelforgeException('not_configured', 'Image generation is temporarily unavailable.');
-        }
+        throw_unless($this->configured(), PixelforgeException::class, 'not_configured', 'Image generation is temporarily unavailable.');
 
         $lock = Cache::lock('pixelforge:request-budget-lock', 5);
-        if (! $lock->get()) {
-            throw new PixelforgeException('local_rate_limit', 'Waiting for available capacity.', true, true, 5);
-        }
+        throw_unless($lock->get(), PixelforgeException::class, 'local_rate_limit', 'Waiting for available capacity.', true, true, 5);
 
         try {
             if (RateLimiter::tooManyAttempts('pixelforge:requests', (int) config('services.pixelforge.request_budget'))) {

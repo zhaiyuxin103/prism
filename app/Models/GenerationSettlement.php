@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Database\Factories\GenerationSettlementFactory;
+use Illuminate\Database\Eloquent\Attributes\Guarded;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -10,13 +11,11 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 /**
  * @mixin IdeHelperGenerationSettlement
  */
+#[Guarded(['id'])]
 class GenerationSettlement extends Model
 {
     /** @use HasFactory<GenerationSettlementFactory> */
     use HasFactory;
-
-    /** @var list<string> */
-    protected $guarded = ['id'];
 
     /** @return array<string, string> */
     protected function casts(): array

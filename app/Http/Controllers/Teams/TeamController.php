@@ -97,7 +97,7 @@ class TeamController extends Controller
         Gate::authorize('update', $team);
 
         $team = DB::transaction(function () use ($request, $team) {
-            $team = Team::whereKey($team->id)->lockForUpdate()->firstOrFail();
+            $team = Team::query()->whereKey($team->id)->lockForUpdate()->firstOrFail();
 
             $team->update(['name' => $request->validated('name')]);
 
@@ -158,7 +158,7 @@ class TeamController extends Controller
             : null;
 
         DB::transaction(function () use ($user, $team) {
-            User::where('current_team_id', $team->id)
+            User::query()->where('current_team_id', $team->id)
                 ->where('id', '!=', $user->id)
                 ->each(fn (User $affectedUser) => $affectedUser->switchTeam($affectedUser->personalTeam()));
 
