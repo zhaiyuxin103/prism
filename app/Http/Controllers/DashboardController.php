@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\PixelforgeClient;
+use App\Http\Resources\GenerationResource;
+use App\Models\Generation;
 use App\Models\TeamInvitation;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -33,6 +36,15 @@ class DashboardController extends Controller
 
         return Inertia::render('Dashboard', [
             'pendingInvitations' => $pendingInvitations,
+            'generations' => fn () => GenerationResource::collection(
+                Generation::query()->where('user_id', $request->user()->id)
+                    ->with('settlement')->latest()->orderByDesc('id')->paginate(12),
+            ),
+            'hasActiveGenerations' => fn () => Generation::query()->where('user_id', $request->user()->id)
+                ->whereIn('status', ['queued', 'processing'])->whereNotNull('next_attempt_at')->exists(),
+            'hasPausedGenerations' => fn () => Generation::query()->where('user_id', $request->user()->id)
+                ->whereIn('status', ['queued', 'processing'])->whereNull('next_attempt_at')->exists(),
+            'providerConfigured' => app(PixelforgeClient::class)->configured(),
         ]);
     }
 }
