@@ -26,7 +26,7 @@ Suggested walkthrough:
 3. Open **Credits** to inspect purchases, reservations and settlement entries. With a zero-balance account, request an estimate and check that generation is blocked until you buy simulated credits. Purchases require no payment details.
 4. Sign out, choose **Demo Admin**, and open **Admin report**. Review daily and per-user spend, provider costs, profit and reconciliation over a UTC date range.
 
-The demo key was also used for earlier local testing. Historical provider totals therefore include records outside the deployed database, and the admin report can show a real difference. The [verification snapshot](#verification-snapshot) records the combined comparison; reconciliation does not alter local charges to hide differences. Images use provider URLs that expire after 24 hours, so older images may be unavailable while their history and charges remain visible.
+The demo API key has been rotated since the [verification snapshot](#verification-snapshot). That snapshot describes the previous key and is not a reconciliation result for the current key. If pre-rotation generations remain in the database, reports covering them can still show differences because provider usage is scoped to the current key. Images use provider URLs that expire after 24 hours, so older images may be unavailable while their history and charges remain visible.
 
 ## Code guide
 
@@ -165,9 +165,9 @@ Regression coverage includes duplicate/out-of-order and early webhooks, expired 
 ### Verification snapshot
 
 <details>
-<summary>Deployed app checks recorded on November 17, 2026 (Asia/Shanghai)</summary>
+<summary>Historical checks with the previous API key, recorded on November 17, 2026 (Asia/Shanghai)</summary>
 
-The deployed app was checked through the browser, followed by read-only production database queries and a `GET /v1/usage` request using the deployed API key.
+This snapshot predates the API key rotation. The deployed app was checked through the browser, followed by read-only production database queries and a `GET /v1/usage` request using the key deployed at that time. The figures below have not been reverified against the replacement key.
 
 | Scenario                | Generation ID prefix | Result                                  | Provider cost (USD) | User charge (USD) |
 | ----------------------- | -------------------- | --------------------------------------- | ------------------: | ----------------: |
@@ -176,7 +176,7 @@ The deployed app was checked through the browser, followed by read-only producti
 
 For the duplicate scenario, the processing and success events each had one stored event record, both marked `processed` without errors. All ten stored events across the five production generations were processed without errors. This verifies the application-side outcome; individual delivery attempts in the provider dashboard were not independently inspected.
 
-The usage query covered **November 16–17, 2026 UTC**. All successful generations in this snapshot were billed on November 16 UTC; November 17 had zero usage. The deployed key's usage includes six earlier successful local test generations retained in the old SQLite database, so it must not be compared with production-only totals without accounting for that history.
+The usage query covered **November 16–17, 2026 UTC**. All successful generations in this snapshot were billed on November 16 UTC; November 17 had zero usage. The previous key's usage included six earlier successful local test generations retained in the old SQLite database, so this historical comparison includes both local and deployed records.
 
 | Source                  | Successful generations | Provider cost (USD) |
 | ----------------------- | ---------------------: | ------------------: |
@@ -187,7 +187,7 @@ The usage query covered **November 16–17, 2026 UTC**. All successful generatio
 
 The combined records matched usage exactly in both cost and all four token categories: 143 input-text tokens, 1,530 input-image tokens, 22,670 output tokens and 16,285 reasoning tokens. Each production success was recalculated from its captured rates; production user charges totaled **$0.616996875**, exactly 125% of provider costs. The failed generation contributed no cost or charge.
 
-These are verification-time totals, not live counters. For a new environment, use a dedicated provider key. If the current key is replaced, reconcile pre-switch and post-switch records against their respective keys rather than comparing all historical records with the new key's usage.
+These are verification-time totals, not live counters. The key has since been rotated. Reconcile pre-switch and post-switch records against their respective keys rather than comparing all historical records with the new key's usage.
 
 </details>
 
@@ -199,7 +199,7 @@ The live demo uses PostgreSQL for application data and **Redis for queues and ca
 
 1. Create an application from the repository, select the intended branch, and use PHP 8.5 and a compatible Node version.
 2. Attach PostgreSQL and a Redis-compatible cache. Let Cloud inject their connection variables; do not carry local database or Redis credentials into production.
-3. Configure the environment variables below. Use a dedicated Pixelforge key for new environments; the current demo's historical usage is documented above.
+3. Configure the environment variables below. Use a dedicated Pixelforge key for each environment; the snapshot above documents usage before the demo key was rotated.
 4. Set the build and deploy commands, configure a queue worker, and enable the App cluster's **Scheduler** toggle. Start with one replica; multiple scheduler replicas need `onOneServer` coordination.
 5. Deploy, set the key's webhook URL to the deployed HTTPS domain plus `/webhooks/pixelforge`, and send a signed test event from Pixelforge.
 6. Register and verify a user. Check a successful generation, a `[fail]` generation, and duplicate webhook delivery. Confirm final charges and the environment key's usage report.
