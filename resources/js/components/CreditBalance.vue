@@ -3,7 +3,22 @@ import { Link } from '@inertiajs/vue3';
 import { Wallet, LoaderCircle } from '@lucide/vue';
 import InputError from '@/components/InputError.vue';
 import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
+import {
+    Card,
+    CardHeader,
+    CardTitle,
+    CardDescription,
+    CardContent,
+} from '@/components/ui/card';
+import { Field, FieldLabel, FieldGroup } from '@/components/ui/field';
+import {
+    Select,
+    SelectContent,
+    SelectGroup,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
 import { useCreditPurchase } from '@/composables/useCreditPurchase';
 import { index } from '@/routes/credits';
 import { formatCredit } from '@/types/credits';
@@ -21,92 +36,109 @@ const { amount, pending, http, message, success, purchase } = useCreditPurchase(
 </script>
 
 <template>
-    <section
-        aria-labelledby="credits-heading"
-        class="flex flex-col gap-5 rounded-2xl border bg-card p-5 sm:p-6"
-    >
-        <div class="flex flex-wrap items-start justify-between gap-4">
+    <Card aria-labelledby="credits-heading">
+        <CardHeader class="flex flex-wrap items-start justify-between gap-4">
             <div class="space-y-2">
-                <h2
-                    id="credits-heading"
-                    class="flex items-center gap-2 text-sm font-medium text-muted-foreground"
-                >
+                <CardTitle id="credits-heading" class="flex items-center gap-2">
                     <Wallet class="size-4" aria-hidden="true" /> Available
                     credits
-                </h2>
+                </CardTitle>
                 <p
                     class="font-mono text-2xl font-semibold break-all tabular-nums"
                     aria-live="polite"
                 >
                     {{ formatCredit(credits.available) }}
                 </p>
-                <p class="text-xs text-muted-foreground">
+                <CardDescription>
                     Balance {{ formatCredit(credits.balance) }} · Reserved
                     {{ formatCredit(credits.reserved) }} · USD
-                </p>
+                </CardDescription>
             </div>
-            <Link
-                v-if="showHistory"
-                :href="index()"
-                class="text-sm underline underline-offset-4"
-                >Credit history</Link
+            <Button v-if="showHistory" variant="link" as-child
+                ><Link :href="index()">Credit history</Link></Button
             >
-        </div>
-        <p
-            v-if="credits.available.startsWith('-')"
-            role="status"
-            class="text-sm text-destructive"
-        >
-            A final charge exceeded its reservation. Add credits to cover the
-            difference before generating again.
-        </p>
-        <form class="flex flex-wrap items-end gap-3" @submit.prevent="purchase">
-            <div class="grid gap-2">
-                <Label for="credit-package">Credit package</Label>
-                <select
-                    id="credit-package"
-                    v-model="amount"
-                    :disabled="http.processing || !!pending"
-                    class="h-10 rounded-lg border bg-background px-3 text-sm"
-                >
-                    <option
-                        v-for="value in packages"
-                        :key="value"
-                        :value="value"
-                    >
-                        ${{ value }} USD
-                    </option>
-                </select>
-            </div>
-            <Button type="submit" :disabled="http.processing"
-                ><LoaderCircle
-                    v-if="http.processing"
-                    class="size-4 animate-spin"
-                />{{
-                    http.processing
-                        ? 'Adding credits…'
-                        : pending
-                          ? 'Retry purchase'
-                          : 'Buy credits'
-                }}</Button
+        </CardHeader>
+        <CardContent class="flex flex-col gap-4">
+            <p
+                v-if="credits.available.startsWith('-')"
+                role="status"
+                class="text-sm text-destructive"
             >
-            <p class="w-full text-xs text-muted-foreground">
-                Simulated purchase. No card details or real payment required.
+                A final charge exceeded its reservation. Add credits to cover
+                the difference before generating again.
             </p>
-        </form>
-        <InputError :message="http.errors.amount" />
-        <InputError :message="http.errors.client_request_id" />
-        <p v-if="message" role="alert" class="text-sm text-destructive">
-            {{ message }}
-        </p>
-        <p v-if="success" role="status" class="text-sm text-muted-foreground">
-            {{ success }}
-        </p>
-        <p class="text-xs leading-relaxed text-muted-foreground">
-            Submitting an image reserves its upper estimate. The actual charge
-            is deducted when it finishes and the remaining reservation is
-            released. Failed generations are free. Paused checks keep their
-            reservation until the outcome is confirmed.
-        </p>
-    </section>
+            <form @submit.prevent="purchase">
+                <FieldGroup class="flex-row flex-wrap items-end gap-3">
+                    <Field
+                        class="w-auto"
+                        :data-invalid="!!http.errors.amount"
+                        :data-disabled="http.processing || !!pending"
+                    >
+                        <FieldLabel for="credit-package"
+                            >Credit package</FieldLabel
+                        >
+                        <Select
+                            v-model="amount"
+                            :disabled="http.processing || !!pending"
+                        >
+                            <SelectTrigger
+                                id="credit-package"
+                                :aria-invalid="!!http.errors.amount"
+                                aria-describedby="credit-package-error"
+                            >
+                                <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent
+                                ><SelectGroup>
+                                    <SelectItem
+                                        v-for="value in packages"
+                                        :key="value"
+                                        :value="value"
+                                        >${{ value }} USD</SelectItem
+                                    >
+                                </SelectGroup></SelectContent
+                            >
+                        </Select>
+                    </Field>
+                    <Button type="submit" :disabled="http.processing"
+                        ><LoaderCircle
+                            v-if="http.processing"
+                            class="size-4 animate-spin"
+                        />{{
+                            http.processing
+                                ? 'Adding credits…'
+                                : pending
+                                  ? 'Retry purchase'
+                                  : 'Buy credits'
+                        }}</Button
+                    >
+                    <p class="w-full text-xs text-muted-foreground">
+                        Simulated purchase. No card details or real payment
+                        required.
+                    </p>
+                </FieldGroup>
+            </form>
+            <InputError
+                id="credit-package-error"
+                :message="http.errors.amount"
+            />
+            <InputError :message="http.errors.client_request_id" />
+            <p v-if="message" role="alert" class="text-sm text-destructive">
+                {{ message }}
+            </p>
+            <p
+                v-if="success"
+                role="status"
+                class="text-sm text-muted-foreground"
+            >
+                {{ success }}
+            </p>
+            <p class="text-xs leading-relaxed text-muted-foreground">
+                Submitting an image reserves its upper estimate. The actual
+                charge is deducted when it finishes and the remaining
+                reservation is released. Failed generations are free. Paused
+                checks keep their reservation until the outcome is confirmed.
+            </p>
+        </CardContent>
+    </Card>
 </template>

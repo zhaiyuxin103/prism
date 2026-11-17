@@ -8,6 +8,7 @@ import Heading from '@/components/Heading.vue';
 import InputError from '@/components/InputError.vue';
 import InviteMemberModal from '@/components/InviteMemberModal.vue';
 import RemoveMemberModal from '@/components/RemoveMemberModal.vue';
+import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -18,6 +19,7 @@ import {
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
+import { Item } from '@/components/ui/item';
 import { Label } from '@/components/ui/label';
 import {
     Tooltip,
@@ -164,11 +166,12 @@ const confirmCancelInvitation = (invitation: TeamInvitation) => {
             </div>
 
             <div class="space-y-3">
-                <div
+                <Item
+                    variant="outline"
                     v-for="member in members"
                     :key="member.id"
                     data-test="member-row"
-                    class="flex items-center justify-between rounded-lg border p-4"
+                    class="justify-between"
                 >
                     <div class="flex items-center gap-4">
                         <Avatar class="h-10 w-10">
@@ -250,7 +253,7 @@ const confirmCancelInvitation = (invitation: TeamInvitation) => {
                             </Tooltip>
                         </TooltipProvider>
                     </div>
-                </div>
+                </Item>
             </div>
         </div>
 
@@ -263,11 +266,12 @@ const confirmCancelInvitation = (invitation: TeamInvitation) => {
             />
 
             <div class="space-y-3">
-                <div
+                <Item
+                    variant="outline"
                     v-for="invitation in invitations"
                     :key="invitation.code"
                     data-test="invitation-row"
-                    class="flex items-center justify-between rounded-lg border p-4"
+                    class="justify-between"
                 >
                     <div class="flex items-center gap-4">
                         <div
@@ -302,7 +306,7 @@ const confirmCancelInvitation = (invitation: TeamInvitation) => {
                             </TooltipContent>
                         </Tooltip>
                     </TooltipProvider>
-                </div>
+                </Item>
             </div>
         </div>
 
@@ -316,17 +320,14 @@ const confirmCancelInvitation = (invitation: TeamInvitation) => {
                 title="Delete team"
                 description="Permanently delete your team"
             />
-            <div
-                class="space-y-4 rounded-lg border border-red-100 bg-red-50 p-4 dark:border-red-200/10 dark:bg-red-700/10"
-            >
-                <div
-                    class="relative space-y-0.5 text-red-600 dark:text-red-100"
+            <div class="flex flex-col items-start gap-4">
+                <Alert variant="destructive"
+                    ><AlertTitle>Warning</AlertTitle
+                    ><AlertDescription
+                        >Please proceed with caution, this cannot be
+                        undone.</AlertDescription
+                    ></Alert
                 >
-                    <p class="font-medium">Warning</p>
-                    <p class="text-sm">
-                        Please proceed with caution, this cannot be undone.
-                    </p>
-                </div>
                 <Button
                     data-test="delete-team-button"
                     variant="destructive"

@@ -103,7 +103,9 @@ test('opens references and associates validation errors with the field', async (
         }),
     );
 
-    expect(html).toMatch(/<details[^>]* open(?:\s|>)/);
+    expect(html).toMatch(
+        /<button[^>]*aria-expanded="true"[^>]*>[\s\S]*?Add reference images/,
+    );
     expect(html).toMatch(
         /<textarea[^>]*id="references"[^>]*aria-describedby="references-help references-errors"[^>]*aria-invalid="true"/,
     );
@@ -121,4 +123,21 @@ test('disables creation and explains why when generation is not configured', asy
     expect(html).toMatch(/<fieldset[^>]*disabled/);
     expect(html).toMatch(/<button[^>]*type="submit"[^>]*disabled/);
     expect(html).toContain('Image generation is being set up.');
+});
+
+test('keeps optional references mounted but hidden until expanded', async () => {
+    const html = await renderToString(
+        createSSRApp(GenerationForm, {
+            configured: true,
+            availableCredits: '10',
+        }),
+    );
+
+    expect(html).toMatch(
+        /data-slot="collapsible-content"[^>]*style="[^"]*display:none/,
+    );
+    expect(html).toContain('id="references"');
+    expect(html).toMatch(
+        /<button[^>]*aria-expanded="false"[^>]*>[\s\S]*?Add reference images/,
+    );
 });

@@ -11,6 +11,8 @@ export const alertVariants = cva(
     variants: {
       variant: {
         default: "bg-card text-card-foreground",
+        success: "border-success/20 bg-success/10 text-success *:data-[slot=alert-description]:text-success",
+        info: "border-primary/20 bg-accent text-accent-foreground *:data-[slot=alert-description]:text-accent-foreground",
         destructive:
           "text-destructive bg-card [&>svg]:text-current *:data-[slot=alert-description]:text-destructive/90",
       },

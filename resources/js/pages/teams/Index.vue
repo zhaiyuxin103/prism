@@ -7,6 +7,8 @@ import Heading from '@/components/Heading.vue';
 import LeaveTeamModal from '@/components/LeaveTeamModal.vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Empty, EmptyDescription } from '@/components/ui/empty';
+import { Item } from '@/components/ui/item';
 import {
     Tooltip,
     TooltipContent,
@@ -65,11 +67,12 @@ defineOptions({
         </div>
 
         <div class="space-y-3">
-            <div
+            <Item
+                variant="outline"
                 v-for="team in teams"
                 :key="team.id"
                 data-test="team-row"
-                class="flex items-center justify-between gap-4 rounded-lg border p-4"
+                class="justify-between"
             >
                 <div class="flex items-center gap-4">
                     <div>
@@ -140,14 +143,13 @@ defineOptions({
                         </Tooltip>
                     </div>
                 </TooltipProvider>
-            </div>
+            </Item>
 
-            <p
-                v-if="teams.length === 0"
-                class="py-8 text-center text-muted-foreground"
+            <Empty v-if="teams.length === 0"
+                ><EmptyDescription
+                    >You don't belong to any teams yet.</EmptyDescription
+                ></Empty
             >
-                You don't belong to any teams yet.
-            </p>
         </div>
     </div>
 

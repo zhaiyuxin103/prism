@@ -2,6 +2,8 @@
 
 @import 'tw-animate-css';
 
+@import './shadcn.css';
+
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 @source '../../storage/framework/views/*.php';
 
@@ -41,6 +43,9 @@
     --color-destructive: var(--destructive);
     --color-destructive-foreground: var(--destructive-foreground);
 
+    --color-success: var(--success);
+    --color-warning: var(--warning);
+
     --color-border: var(--border);
     --color-input: var(--input);
     --color-ring: var(--ring);
@@ -63,6 +68,8 @@
 
 :root {
     color-scheme: light;
+    --success: oklch(0.508 0.118 165.612);
+    --warning: oklch(0.555 0.163 48.998);
     --background: oklch(0.984 0.004 285);
     --foreground: oklch(0.23 0.025 285);
     --card: oklch(1 0 0);
@@ -100,6 +107,8 @@
 
 .dark {
     color-scheme: dark;
+    --success: oklch(0.765 0.177 163.223);
+    --warning: oklch(0.828 0.189 84.429);
     --background: oklch(0.17 0.013 285);
     --foreground: oklch(0.985 0 0);
     --card: oklch(0.205 0.014 285);

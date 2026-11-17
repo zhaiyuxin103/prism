@@ -3,6 +3,7 @@ import { Head, Link, usePage } from '@inertiajs/vue3';
 import { ArrowUpRight, Check, Sparkles } from '@lucide/vue';
 import { computed } from 'vue';
 import AppLogoIcon from '@/components/AppLogoIcon.vue';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { dashboard, home, login, register } from '@/routes';
 
@@ -24,22 +25,19 @@ const destination = computed(() =>
                 :href="home()"
                 class="flex items-center gap-2.5 text-xl font-semibold tracking-tight"
                 ><AppLogoIcon class="size-7" />Prism</Link
-            ><Link
-                :href="page.props.auth.user ? destination : login()"
-                class="inline-flex min-h-11 items-center gap-2 rounded-full border bg-card px-5 text-sm font-medium transition-colors hover:bg-accent"
-                >{{ page.props.auth.user ? 'Open studio' : 'Log in' }}
-                <span aria-hidden="true">↗</span></Link
-            >
+            ><Button variant="outline" as-child
+                ><Link :href="page.props.auth.user ? destination : login()"
+                    >{{ page.props.auth.user ? 'Open studio' : 'Log in' }}
+                    <ArrowUpRight aria-hidden="true" /></Link
+            ></Button>
         </header>
         <main
             class="mx-auto grid max-w-6xl items-center gap-12 px-5 py-14 sm:px-8 sm:py-20 lg:min-h-[75vh] lg:grid-cols-[1.1fr_1fr] lg:gap-16 lg:py-24"
         >
             <section>
-                <p
-                    class="mb-6 inline-flex items-center gap-2 rounded-full border border-primary/15 bg-accent/60 px-3 py-2 text-xs font-medium text-accent-foreground"
+                <Badge variant="secondary" class="mb-6"
+                    ><Sparkles />A space for your imagination</Badge
                 >
-                    <Sparkles class="size-4" />A space for your imagination
-                </p>
                 <h1
                     class="max-w-lg text-5xl leading-[1.08] font-semibold tracking-[-0.045em] sm:text-6xl lg:text-7xl"
                 >
@@ -55,20 +53,15 @@ const destination = computed(() =>
                     finish.
                 </p>
                 <div class="mt-8 flex flex-wrap items-center gap-4">
-                    <Button
-                        as-child
-                        size="lg"
-                        class="h-12 rounded-xl px-6 shadow-sm"
+                    <Button as-child size="lg"
                         ><Link :href="destination"
                             >{{
                                 page.props.auth.user
                                     ? 'Open your studio'
                                     : 'Start creating'
                             }}<ArrowUpRight class="size-4" /></Link></Button
-                    ><a
-                        href="#how-it-works"
-                        class="inline-flex min-h-11 items-center px-2 text-sm font-medium text-muted-foreground underline decoration-border underline-offset-4 hover:text-foreground"
-                        >See how it works</a
+                    ><Button variant="link" as-child
+                        ><a href="#how-it-works">See how it works</a></Button
                     >
                 </div>
                 <ul

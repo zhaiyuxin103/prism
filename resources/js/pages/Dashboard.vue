@@ -9,13 +9,23 @@ import {
 } from '@lucide/vue';
 import { ref, watch } from 'vue';
 import CreditBalanceCard from '@/components/CreditBalance.vue';
-import type { CreditBalance } from '@/types/credits';
 import GenerationCard from '@/components/GenerationCard.vue';
 import GenerationForm from '@/components/GenerationForm.vue';
 import PendingInvitationsModal from '@/components/PendingInvitationsModal.vue';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import {
+    Empty,
+    EmptyHeader,
+    EmptyMedia,
+    EmptyTitle,
+    EmptyDescription,
+    EmptyContent,
+} from '@/components/ui/empty';
 import { dashboard } from '@/routes';
 import type { DashboardInvitation, Team } from '@/types';
+import type { CreditBalance } from '@/types/credits';
 import type { GenerationPage } from '@/types/generation';
 
 const props = defineProps<{
@@ -129,7 +139,7 @@ defineOptions({
                     role="status"
                     class="flex items-center gap-2 text-xs text-muted-foreground"
                     ><span
-                        class="size-2 rounded-full bg-emerald-500 motion-safe:animate-pulse"
+                        class="size-2 rounded-full bg-success motion-safe:animate-pulse"
                     />Updating your images</span
                 >
             </header>
@@ -139,15 +149,14 @@ defineOptions({
                 show-history
                 @purchased="purchased"
             />
-            <a
-                href="#generations"
-                class="flex w-fit items-center gap-2 rounded-lg border bg-card px-3 py-2.5 text-sm font-medium lg:hidden"
-                >Your generations
-                <span class="text-muted-foreground">{{
-                    generations.meta.total
-                }}</span
-                ><ArrowDown class="size-4" aria-hidden="true"
-            /></a>
+            <Button variant="outline" as-child class="w-fit lg:hidden"
+                ><a href="#generations"
+                    >Your generations
+                    <Badge variant="secondary">{{
+                        generations.meta.total
+                    }}</Badge
+                    ><ArrowDown aria-hidden="true" /></a
+            ></Button>
             <div
                 class="grid items-start gap-8 lg:grid-cols-[340px_minmax(0,1fr)] xl:grid-cols-[380px_minmax(0,1fr)]"
             >
@@ -171,10 +180,9 @@ defineOptions({
                             class="flex items-center gap-2.5 font-semibold"
                         >
                             Your generations
-                            <span
-                                class="rounded-md bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground tabular-nums"
-                                >{{ generations.meta.total }}</span
-                            >
+                            <Badge variant="secondary">{{
+                                generations.meta.total
+                            }}</Badge>
                         </h2>
                         <span
                             class="flex items-center gap-1.5 text-xs text-muted-foreground"
@@ -195,45 +203,37 @@ defineOptions({
                             @resumed="refresh"
                         />
                     </div>
-                    <div
-                        v-else
-                        class="relative flex min-h-[440px] flex-col items-center justify-center overflow-hidden rounded-2xl border bg-card p-6 text-center sm:p-10"
-                    >
-                        <div
-                            aria-hidden="true"
-                            class="pointer-events-none absolute inset-0 bg-[radial-gradient(var(--border)_1px,transparent_1px)] bg-size-[20px_20px] opacity-40"
-                        />
-                        <div class="relative flex flex-col items-center">
-                            <div
-                                class="mb-6 flex size-16 -rotate-6 items-center justify-center rounded-2xl border border-primary/15 bg-accent shadow-sm"
-                            >
-                                <Sparkles
-                                    class="size-7 text-primary"
-                                    aria-hidden="true"
-                                />
-                            </div>
-                            <h3 class="text-xl font-semibold tracking-tight">
-                                Your next idea belongs here.
-                            </h3>
-                            <p
-                                class="mt-2 max-w-xs text-sm leading-relaxed text-muted-foreground"
-                            >
-                                Describe what you imagine and review the
-                                estimate. Your images and their final costs will
-                                appear here.
-                            </p>
-                            <a
-                                href="#prompt"
-                                class="mt-6 inline-flex min-h-11 items-center gap-2 rounded-lg bg-accent px-4 text-sm font-medium text-accent-foreground hover:bg-primary/15"
-                                >Write your first prompt<ArrowRight
-                                    class="size-4"
-                                    aria-hidden="true"
-                            /></a>
-                            <p class="mt-5 text-xs text-muted-foreground">
-                                A place, a product, a world of your own.
-                            </p>
-                        </div>
-                    </div>
+                    <Card v-else>
+                        <CardContent>
+                            <Empty class="min-h-[440px]">
+                                <EmptyHeader>
+                                    <EmptyMedia variant="icon"
+                                        ><Sparkles aria-hidden="true"
+                                    /></EmptyMedia>
+                                    <EmptyTitle
+                                        >Your next idea belongs
+                                        here.</EmptyTitle
+                                    >
+                                    <EmptyDescription
+                                        >Describe what you imagine and review
+                                        the estimate. Your images and their
+                                        final costs will appear
+                                        here.</EmptyDescription
+                                    >
+                                </EmptyHeader>
+                                <EmptyContent>
+                                    <Button variant="secondary" as-child
+                                        ><a href="#prompt"
+                                            >Write your first prompt<ArrowRight
+                                                aria-hidden="true" /></a
+                                    ></Button>
+                                    <p class="text-xs text-muted-foreground">
+                                        A place, a product, a world of your own.
+                                    </p>
+                                </EmptyContent>
+                            </Empty>
+                        </CardContent>
+                    </Card>
                     <nav
                         v-if="generations.meta.last_page > 1"
                         aria-label="Generation history pages"

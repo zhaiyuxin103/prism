@@ -2,10 +2,32 @@
 import { Form, Head, Link } from '@inertiajs/vue3';
 import { CircleCheck, CircleAlert, RefreshCw } from '@lucide/vue';
 import { computed, ref } from 'vue';
+import DatePicker from '@/components/DatePicker.vue';
 import InputError from '@/components/InputError.vue';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import {
+    Card,
+    CardHeader,
+    CardTitle,
+    CardDescription,
+    CardContent,
+} from '@/components/ui/card';
+import {
+    Collapsible,
+    CollapsibleTrigger,
+    CollapsibleContent,
+} from '@/components/ui/collapsible';
+import { Empty, EmptyDescription } from '@/components/ui/empty';
+import { Field, FieldGroup, FieldLabel } from '@/components/ui/field';
+import {
+    Table,
+    TableBody,
+    TableCaption,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from '@/components/ui/table';
 import { report as reportRoute } from '@/routes/admin';
 import type { AdminReport, UserReportPage } from '@/types/admin-report';
 import { formatCost } from '@/types/generation';
@@ -79,82 +101,110 @@ defineOptions({
                 </p>
             </header>
 
-            <Form
-                :action="reportRoute.url()"
-                method="get"
-                :options="{ preserveState: 'errors', preserveScroll: true }"
-                #default="{ errors, processing }"
-                class="flex flex-wrap items-start gap-4 rounded-xl border bg-card p-5"
+            <Card
+                ><CardContent>
+                    <Form
+                        :action="reportRoute.url()"
+                        method="get"
+                        :options="{
+                            preserveState: 'errors',
+                            preserveScroll: true,
+                        }"
+                        #default="{ errors, processing }"
+                    >
+                        <FieldGroup
+                            class="flex-row flex-wrap items-start gap-4"
+                        >
+                            <Field
+                                class="w-auto"
+                                :data-invalid="!!errors.start_date"
+                            >
+                                <FieldLabel for="start_date"
+                                    >From (UTC)</FieldLabel
+                                >
+                                <DatePicker
+                                    id="start_date"
+                                    name="start_date"
+                                    label="From (UTC)"
+                                    :default-value="filters.start_date"
+                                    :aria-invalid="!!errors.start_date"
+                                    aria-describedby="start_date-error"
+                                    required
+                                />
+                                <InputError
+                                    id="start_date-error"
+                                    :message="errors.start_date"
+                                />
+                            </Field>
+                            <Field
+                                class="w-auto"
+                                :data-invalid="!!errors.end_date"
+                            >
+                                <FieldLabel for="end_date"
+                                    >Through (UTC)</FieldLabel
+                                >
+                                <DatePicker
+                                    id="end_date"
+                                    name="end_date"
+                                    label="Through (UTC)"
+                                    :default-value="filters.end_date"
+                                    :aria-invalid="!!errors.end_date"
+                                    aria-describedby="end_date-error"
+                                    required
+                                />
+                                <InputError
+                                    id="end_date-error"
+                                    :message="errors.end_date"
+                                />
+                            </Field>
+                            <Button
+                                type="submit"
+                                :disabled="processing"
+                                class="mt-6"
+                            >
+                                <RefreshCw
+                                    class="size-4"
+                                    :class="{ 'animate-spin': processing }"
+                                />
+                                {{
+                                    processing ? 'Checking…' : 'Refresh report'
+                                }}
+                            </Button>
+                            <p class="w-full text-xs text-muted-foreground">
+                                Up to 92 days, inclusive. Generations belong to
+                                the UTC day they completed at Pixelforge.
+                            </p>
+                        </FieldGroup>
+                    </Form>
+                </CardContent></Card
             >
-                <div class="grid gap-2">
-                    <Label for="start_date">From (UTC)</Label>
-                    <Input
-                        id="start_date"
-                        name="start_date"
-                        type="date"
-                        :default-value="filters.start_date"
-                        required
-                    />
-                    <InputError :message="errors.start_date" />
-                </div>
-                <div class="grid gap-2">
-                    <Label for="end_date">Through (UTC)</Label>
-                    <Input
-                        id="end_date"
-                        name="end_date"
-                        type="date"
-                        :default-value="filters.end_date"
-                        required
-                    />
-                    <InputError :message="errors.end_date" />
-                </div>
-                <Button type="submit" :disabled="processing" class="mt-6">
-                    <RefreshCw
-                        class="size-4"
-                        :class="{ 'animate-spin': processing }"
-                    />
-                    {{ processing ? 'Checking…' : 'Refresh report' }}
-                </Button>
-                <p class="w-full text-xs text-muted-foreground">
-                    Up to 92 days, inclusive. Generations belong to the UTC day
-                    they completed at Pixelforge.
-                </p>
-            </Form>
 
             <div class="grid gap-4 md:grid-cols-3">
-                <section
-                    v-for="metric in metrics"
-                    :key="metric.key"
-                    class="flex flex-col gap-2 rounded-xl border bg-card p-5"
-                >
-                    <h2 class="text-sm font-medium text-muted-foreground">
-                        {{ metric.label }}
-                    </h2>
-                    <p
-                        class="font-mono text-xl font-semibold break-all tabular-nums"
+                <Card v-for="metric in metrics" :key="metric.key">
+                    <CardHeader
+                        ><CardTitle>{{ metric.label }}</CardTitle
+                        ><CardDescription>{{
+                            metric.description
+                        }}</CardDescription></CardHeader
                     >
-                        {{ formatCost(report.totals[metric.key]) }}
-                    </p>
-                    <p class="text-xs text-muted-foreground">
-                        {{ metric.description }}
-                    </p>
-                </section>
+                    <CardContent
+                        ><p
+                            class="font-mono text-xl font-semibold break-all tabular-nums"
+                        >
+                            {{ formatCost(report.totals[metric.key]) }}
+                        </p></CardContent
+                    >
+                </Card>
             </div>
 
-            <section
-                class="flex flex-col gap-3 rounded-xl border bg-card p-5"
-                aria-labelledby="reconciliation-title"
-            >
-                <div class="flex items-center gap-2">
+            <Card aria-labelledby="reconciliation-title">
+                <CardHeader class="flex items-center gap-2">
                     <CircleCheck
                         v-if="report.reconciliation.status === 'matched'"
-                        class="size-5 text-emerald-600 dark:text-emerald-400"
+                        class="size-5 text-success"
                     />
-                    <CircleAlert
-                        v-else
-                        class="size-5 text-amber-600 dark:text-amber-400"
-                    />
-                    <h2 id="reconciliation-title" class="font-semibold">
+                    <CircleAlert v-else class="size-5 text-warning" />
+                    <CardTitle id="reconciliation-title">
                         {{
                             report.reconciliation.status === 'matched'
                                 ? 'Provider costs match'
@@ -162,77 +212,81 @@ defineOptions({
                                   ? 'Reconciliation difference found'
                                   : 'Reconciliation unavailable'
                         }}
-                    </h2>
-                </div>
-                <p
-                    v-if="report.reconciliation.message"
-                    role="status"
-                    class="text-sm"
-                >
-                    {{ report.reconciliation.message }}
-                </p>
-                <div
-                    v-if="report.reconciliation.total"
-                    class="flex flex-wrap gap-x-8 gap-y-3 text-sm"
-                >
-                    <p>
-                        Pixelforge total
-                        <strong class="font-mono">{{
-                            formatCost(
-                                report.reconciliation.total.provider_cost,
-                            )
-                        }}</strong>
+                    </CardTitle>
+                </CardHeader>
+                <CardContent class="flex flex-col gap-3">
+                    <p
+                        v-if="report.reconciliation.message"
+                        role="status"
+                        class="text-sm"
+                    >
+                        {{ report.reconciliation.message }}
                     </p>
-                    <p>
-                        Cost difference
-                        <strong class="font-mono">{{
-                            formatCost(
-                                report.reconciliation.total.cost_difference,
-                            )
-                        }}</strong>
+                    <div
+                        v-if="report.reconciliation.total"
+                        class="flex flex-wrap gap-x-8 gap-y-3 text-sm"
+                    >
+                        <p>
+                            Pixelforge total
+                            <strong class="font-mono">{{
+                                formatCost(
+                                    report.reconciliation.total.provider_cost,
+                                )
+                            }}</strong>
+                        </p>
+                        <p>
+                            Cost difference
+                            <strong class="font-mono">{{
+                                formatCost(
+                                    report.reconciliation.total.cost_difference,
+                                )
+                            }}</strong>
+                        </p>
+                        <p>
+                            Successful generations
+                            <strong
+                                >{{ report.totals.generations }} local /
+                                {{
+                                    report.reconciliation.total
+                                        .provider_generations
+                                }}
+                                provider</strong
+                            >
+                        </p>
+                    </div>
+                    <p
+                        v-if="report.reconciliation.status === 'mismatch'"
+                        class="text-sm text-muted-foreground"
+                    >
+                        Review the highlighted days below. Delayed results or
+                        using a different provider key can cause differences.
+                        Refresh after pending generations have settled.
                     </p>
-                    <p>
-                        Successful generations
-                        <strong
-                            >{{ report.totals.generations }} local /
-                            {{
-                                report.reconciliation.total.provider_generations
-                            }}
-                            provider</strong
-                        >
+                    <p class="text-xs leading-relaxed text-muted-foreground">
+                        Compared with the usage reported by the API key
+                        configured for this environment. Use a dedicated key for
+                        this database; changing keys or sharing one across
+                        environments changes the comparison. Differences are
+                        local minus provider. Today's figures may change as
+                        generations complete.
                     </p>
-                </div>
-                <p
-                    v-if="report.reconciliation.status === 'mismatch'"
-                    class="text-sm text-muted-foreground"
-                >
-                    Review the highlighted days below. Delayed results or using
-                    a different provider key can cause differences. Refresh
-                    after pending generations have settled.
-                </p>
-                <p class="text-xs leading-relaxed text-muted-foreground">
-                    Compared with the usage reported by the API key configured
-                    for this environment. Use a dedicated key for this database;
-                    changing keys or sharing one across environments changes the
-                    comparison. Differences are local minus provider. Today's
-                    figures may change as generations complete.
-                </p>
-                <p
-                    v-if="report.reconciliation.checked_at"
-                    class="text-xs text-muted-foreground"
-                >
-                    Checked {{ report.reconciliation.checked_at }} (UTC).
-                    Provider usage may be cached for up to 30 seconds.
-                </p>
-                <p
-                    v-if="report.unresolved_generations"
-                    class="text-sm text-muted-foreground"
-                >
-                    {{ report.unresolved_generations }} generation(s) in this
-                    environment still have no final result, including paused
-                    checks. Their final charges are not yet included.
-                </p>
-            </section>
+                    <p
+                        v-if="report.reconciliation.checked_at"
+                        class="text-xs text-muted-foreground"
+                    >
+                        Checked {{ report.reconciliation.checked_at }} (UTC).
+                        Provider usage may be cached for up to 30 seconds.
+                    </p>
+                    <p
+                        v-if="report.unresolved_generations"
+                        class="text-sm text-muted-foreground"
+                    >
+                        {{ report.unresolved_generations }} generation(s) in
+                        this environment still have no final result, including
+                        paused checks. Their final charges are not yet included.
+                    </p>
+                </CardContent>
+            </Card>
 
             <section class="flex flex-col gap-4" aria-labelledby="daily-title">
                 <div
@@ -266,62 +320,65 @@ defineOptions({
                         }}
                     </Button>
                 </div>
-                <p
-                    v-if="visibleDays.length === 0"
-                    class="text-sm text-muted-foreground"
+                <Empty v-if="visibleDays.length === 0" class="border"
+                    ><EmptyDescription>
+                        No activity on either side for this date range.
+                    </EmptyDescription></Empty
                 >
-                    No activity on either side for this date range.
-                </p>
-                <div v-else class="overflow-x-auto rounded-xl border">
-                    <table
-                        class="w-full text-left text-sm whitespace-nowrap [&_td]:p-3 [&_th]:p-3"
-                    >
-                        <caption class="sr-only">
+                <div v-else class="overflow-hidden rounded-xl border">
+                    <Table class="text-left">
+                        <TableCaption class="sr-only">
                             Daily charges, profit and provider reconciliation in
                             USD
-                        </caption>
-                        <thead
-                            class="bg-muted/50 text-xs text-muted-foreground"
-                        >
-                            <tr>
-                                <th scope="col">Date (UTC)</th>
-                                <th scope="col">Succeeded / failed</th>
-                                <th scope="col">Credit spend</th>
-                                <th scope="col">Provider cost</th>
-                                <th scope="col">Profit</th>
-                                <th scope="col">Pixelforge cost</th>
-                                <th scope="col">Cost difference</th>
-                                <th scope="col">Count difference</th>
-                                <th scope="col">Check</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y">
-                            <tr
+                        </TableCaption>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead scope="col">Date (UTC)</TableHead>
+                                <TableHead scope="col"
+                                    >Succeeded / failed</TableHead
+                                >
+                                <TableHead scope="col">Credit spend</TableHead>
+                                <TableHead scope="col">Provider cost</TableHead>
+                                <TableHead scope="col">Profit</TableHead>
+                                <TableHead scope="col"
+                                    >Pixelforge cost</TableHead
+                                >
+                                <TableHead scope="col"
+                                    >Cost difference</TableHead
+                                >
+                                <TableHead scope="col"
+                                    >Count difference</TableHead
+                                >
+                                <TableHead scope="col">Check</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            <TableRow
                                 v-for="day in visibleDays"
                                 :key="day.date"
                                 :class="{
-                                    'bg-amber-50/60 dark:bg-amber-950/20':
+                                    'bg-warning/10 hover:bg-warning/15':
                                         day.reconciliation?.status ===
                                         'mismatch',
                                 }"
                             >
-                                <th scope="row" class="font-medium">
+                                <TableHead scope="row" class="font-medium">
                                     {{ day.date }}
-                                </th>
-                                <td>
+                                </TableHead>
+                                <TableCell>
                                     {{ day.amounts.generations }} /
                                     {{ day.amounts.failed }}
-                                </td>
-                                <td class="font-mono tabular-nums">
+                                </TableCell>
+                                <TableCell class="font-mono tabular-nums">
                                     {{ formatCost(day.amounts.user_charge) }}
-                                </td>
-                                <td class="font-mono tabular-nums">
+                                </TableCell>
+                                <TableCell class="font-mono tabular-nums">
                                     {{ formatCost(day.amounts.provider_cost) }}
-                                </td>
-                                <td class="font-mono tabular-nums">
+                                </TableCell>
+                                <TableCell class="font-mono tabular-nums">
                                     {{ formatCost(day.amounts.profit) }}
-                                </td>
-                                <td class="font-mono tabular-nums">
+                                </TableCell>
+                                <TableCell class="font-mono tabular-nums">
                                     {{
                                         day.reconciliation
                                             ? formatCost(
@@ -330,8 +387,8 @@ defineOptions({
                                               )
                                             : '—'
                                     }}
-                                </td>
-                                <td class="font-mono tabular-nums">
+                                </TableCell>
+                                <TableCell class="font-mono tabular-nums">
                                     {{
                                         day.reconciliation
                                             ? formatCost(
@@ -340,14 +397,14 @@ defineOptions({
                                               )
                                             : '—'
                                     }}
-                                </td>
-                                <td>
+                                </TableCell>
+                                <TableCell>
                                     {{
                                         day.reconciliation
                                             ?.generation_difference ?? '—'
                                     }}
-                                </td>
-                                <td>
+                                </TableCell>
+                                <TableCell>
                                     {{
                                         day.reconciliation?.status === 'matched'
                                             ? 'Matched'
@@ -355,10 +412,10 @@ defineOptions({
                                               ? 'Difference'
                                               : 'Not checked'
                                     }}
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
+                                </TableCell>
+                            </TableRow>
+                        </TableBody>
+                    </Table>
                 </div>
             </section>
 
@@ -373,106 +430,138 @@ defineOptions({
                         {{ users.total }} users · highest spend first
                     </p>
                 </div>
-                <p
-                    v-if="users.total === 0"
-                    class="rounded-xl border border-dashed p-8 text-center text-sm text-muted-foreground"
+                <Empty v-if="users.total === 0" class="border"
+                    ><EmptyDescription>
+                        No completed, settled generations in this date range.
+                    </EmptyDescription></Empty
                 >
-                    No completed, settled generations in this date range.
-                </p>
                 <div v-else class="overflow-hidden rounded-xl border">
-                    <details
+                    <Collapsible
                         v-for="user in users.data"
+                        v-slot="{ open }"
                         :key="user.id ?? 'deleted'"
                         class="border-b last:border-b-0"
                     >
-                        <summary
-                            class="cursor-pointer p-4 focus-visible:outline-2 focus-visible:outline-ring"
-                        >
-                            <span class="font-medium">{{ user.name }}</span>
-                            <span class="ml-2 text-xs text-muted-foreground">{{
-                                user.email ?? 'Retained financial history'
-                            }}</span>
-                            <span
-                                class="mt-2 flex flex-wrap gap-x-6 gap-y-2 pl-4 text-sm"
+                        <CollapsibleTrigger as-child>
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                class="h-auto w-full flex-col items-start p-4 whitespace-normal"
                             >
-                                <span
-                                    >Spend
-                                    <strong class="font-mono">{{
-                                        formatCost(user.amounts.user_charge)
-                                    }}</strong></span
-                                >
-                                <span
-                                    >Cost
-                                    <strong class="font-mono">{{
-                                        formatCost(user.amounts.provider_cost)
-                                    }}</strong></span
-                                >
-                                <span
-                                    >Profit
-                                    <strong class="font-mono">{{
-                                        formatCost(user.amounts.profit)
-                                    }}</strong></span
-                                >
-                                <span class="text-muted-foreground"
-                                    >{{ user.amounts.generations }} succeeded /
-                                    {{ user.amounts.failed }} failed · expand
-                                    daily details</span
-                                >
-                            </span>
-                        </summary>
-                        <div class="overflow-x-auto border-t bg-muted/20">
-                            <table
-                                class="w-full text-left text-sm whitespace-nowrap [&_td]:p-3 [&_th]:p-3"
-                            >
-                                <caption class="sr-only">
-                                    Daily totals for
-                                    {{
+                                <span class="text-left">
+                                    <span class="font-medium">{{
                                         user.name
-                                    }}
-                                </caption>
-                                <thead class="text-xs text-muted-foreground">
-                                    <tr>
-                                        <th scope="col">Date (UTC)</th>
-                                        <th scope="col">Succeeded / failed</th>
-                                        <th scope="col">Credit spend</th>
-                                        <th scope="col">Provider cost</th>
-                                        <th scope="col">Profit</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr
+                                    }}</span>
+                                    <span
+                                        class="ml-2 text-xs text-muted-foreground"
+                                        >{{
+                                            user.email ??
+                                            'Retained financial history'
+                                        }}</span
+                                    >
+                                    <span
+                                        class="mt-2 flex flex-wrap gap-x-6 gap-y-2 pl-4 text-sm"
+                                    >
+                                        <span
+                                            >Spend
+                                            <strong class="font-mono">{{
+                                                formatCost(
+                                                    user.amounts.user_charge,
+                                                )
+                                            }}</strong></span
+                                        >
+                                        <span
+                                            >Cost
+                                            <strong class="font-mono">{{
+                                                formatCost(
+                                                    user.amounts.provider_cost,
+                                                )
+                                            }}</strong></span
+                                        >
+                                        <span
+                                            >Profit
+                                            <strong class="font-mono">{{
+                                                formatCost(user.amounts.profit)
+                                            }}</strong></span
+                                        >
+                                        <span class="text-muted-foreground"
+                                            >{{ user.amounts.generations }}
+                                            succeeded /
+                                            {{ user.amounts.failed }} failed ·
+                                            expand daily details</span
+                                        >
+                                    </span>
+                                </span>
+                            </Button>
+                        </CollapsibleTrigger>
+                        <CollapsibleContent
+                            force-mount
+                            v-show="open"
+                            class="border-t"
+                        >
+                            <Table class="text-left">
+                                <TableCaption class="sr-only">
+                                    Daily totals for
+                                    {{ user.name }}
+                                </TableCaption>
+                                <TableHeader
+                                    class="text-xs text-muted-foreground"
+                                >
+                                    <TableRow>
+                                        <TableHead scope="col"
+                                            >Date (UTC)</TableHead
+                                        >
+                                        <TableHead scope="col"
+                                            >Succeeded / failed</TableHead
+                                        >
+                                        <TableHead scope="col"
+                                            >Credit spend</TableHead
+                                        >
+                                        <TableHead scope="col"
+                                            >Provider cost</TableHead
+                                        >
+                                        <TableHead scope="col"
+                                            >Profit</TableHead
+                                        >
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    <TableRow
                                         v-for="day in user.days"
                                         :key="day.date"
                                     >
-                                        <th scope="row" class="font-medium">
+                                        <TableHead
+                                            scope="row"
+                                            class="font-medium"
+                                        >
                                             {{ day.date }}
-                                        </th>
-                                        <td>
+                                        </TableHead>
+                                        <TableCell>
                                             {{ day.amounts.generations }} /
                                             {{ day.amounts.failed }}
-                                        </td>
-                                        <td class="font-mono">
+                                        </TableCell>
+                                        <TableCell class="font-mono">
                                             {{
                                                 formatCost(
                                                     day.amounts.user_charge,
                                                 )
                                             }}
-                                        </td>
-                                        <td class="font-mono">
+                                        </TableCell>
+                                        <TableCell class="font-mono">
                                             {{
                                                 formatCost(
                                                     day.amounts.provider_cost,
                                                 )
                                             }}
-                                        </td>
-                                        <td class="font-mono">
+                                        </TableCell>
+                                        <TableCell class="font-mono">
                                             {{ formatCost(day.amounts.profit) }}
-                                        </td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </details>
+                                        </TableCell>
+                                    </TableRow>
+                                </TableBody>
+                            </Table>
+                        </CollapsibleContent>
+                    </Collapsible>
                 </div>
                 <nav
                     v-if="users.last_page > 1"

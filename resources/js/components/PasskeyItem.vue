@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { KeyRound, Trash2 } from '@lucide/vue';
 import { ref } from 'vue';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -42,12 +43,9 @@ const handleDelete = () => {
             <div class="space-y-1">
                 <div class="flex items-center gap-2.5">
                     <p class="font-medium tracking-tight">{{ passkey.name }}</p>
-                    <span
-                        v-if="passkey.authenticator"
-                        class="inline-flex items-center gap-1 rounded-md bg-muted px-2 py-0.5 text-[11px] font-medium tracking-wide text-muted-foreground uppercase ring-1 ring-border ring-inset"
-                    >
-                        {{ passkey.authenticator }}
-                    </span>
+                    <Badge v-if="passkey.authenticator" variant="secondary">{{
+                        passkey.authenticator
+                    }}</Badge>
                 </div>
                 <p class="text-sm text-muted-foreground">
                     Added {{ passkey.created_at_diff }}

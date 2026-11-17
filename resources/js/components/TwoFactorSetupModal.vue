@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { Form } from '@inertiajs/vue3';
-import { useClipboard } from '@vueuse/core';
 import { Check, Copy, ScanLine } from '@lucide/vue';
+import { useClipboard } from '@vueuse/core';
 import { computed, nextTick, ref, useTemplateRef, watch } from 'vue';
 import AlertError from '@/components/AlertError.vue';
 import InputError from '@/components/InputError.vue';
@@ -14,10 +14,17 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog';
 import {
+    InputGroup,
+    InputGroupInput,
+    InputGroupAddon,
+    InputGroupButton,
+} from '@/components/ui/input-group';
+import {
     InputOTP,
     InputOTPGroup,
     InputOTPSlot,
 } from '@/components/ui/input-otp';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Spinner } from '@/components/ui/spinner';
 import { useAppearance } from '@/composables/useAppearance';
 import { useTwoFactorAuth } from '@/composables/useTwoFactorAuth';
@@ -160,12 +167,12 @@ watch(
                             <div
                                 class="relative mx-auto aspect-square w-64 overflow-hidden rounded-lg border border-border"
                             >
-                                <div
+                                <Skeleton
                                     v-if="!qrCodeSvg"
-                                    class="absolute inset-0 z-10 flex aspect-square h-auto w-full animate-pulse items-center justify-center bg-background"
+                                    class="absolute inset-0 flex aspect-square h-auto w-full items-center justify-center"
                                 >
                                     <Spinner class="size-6" />
-                                </div>
+                                </Skeleton>
                                 <div
                                     v-else
                                     class="relative z-10 overflow-hidden border p-5"
@@ -201,38 +208,39 @@ watch(
                             >
                         </div>
 
-                        <div
-                            class="flex w-full items-center justify-center space-x-2"
-                        >
+                        <InputGroup>
                             <div
-                                class="flex w-full items-stretch overflow-hidden rounded-xl border border-border"
+                                v-if="!manualSetupKey"
+                                class="flex w-full justify-center p-3"
                             >
-                                <div
-                                    v-if="!manualSetupKey"
-                                    class="flex h-full w-full items-center justify-center bg-muted p-3"
-                                >
-                                    <Spinner />
-                                </div>
-                                <template v-else>
-                                    <input
-                                        type="text"
-                                        readonly
-                                        :value="manualSetupKey"
-                                        class="h-full w-full bg-background p-3 text-foreground"
-                                    />
-                                    <button
+                                <Spinner />
+                            </div>
+                            <template v-else>
+                                <InputGroupInput
+                                    type="text"
+                                    readonly
+                                    :model-value="manualSetupKey"
+                                    aria-label="Authenticator setup key"
+                                />
+                                <InputGroupAddon align="inline-end">
+                                    <InputGroupButton
+                                        type="button"
+                                        size="icon-xs"
                                         @click="copy(manualSetupKey || '')"
-                                        class="relative block h-auto border-l border-border px-3 hover:bg-muted"
+                                        :aria-label="
+                                            copied
+                                                ? 'Copied setup key'
+                                                : 'Copy setup key'
+                                        "
                                     >
                                         <Check
                                             v-if="copied"
-                                            class="w-4 text-green-500"
-                                        />
-                                        <Copy v-else class="w-4" />
-                                    </button>
-                                </template>
-                            </div>
-                        </div>
+                                            class="text-success"
+                                        /><Copy v-else />
+                                    </InputGroupButton>
+                                </InputGroupAddon>
+                            </template>
+                        </InputGroup>
                     </template>
                 </template>
 

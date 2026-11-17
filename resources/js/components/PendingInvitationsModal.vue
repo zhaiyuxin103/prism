@@ -10,6 +10,7 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
+import { Item } from '@/components/ui/item';
 import type { DashboardInvitation } from '@/types';
 
 type Props = {
@@ -52,11 +53,12 @@ const declineInvitation = (invitation: DashboardInvitation) => {
             </DialogHeader>
 
             <div class="grid gap-4">
-                <div
+                <Item
+                    variant="outline"
                     v-for="invitation in props.invitations"
                     :key="invitation.code"
                     data-test="pending-invitation-row"
-                    class="rounded-lg border p-4"
+                    class="justify-between"
                 >
                     <div class="space-y-1">
                         <p class="font-medium">{{ invitation.team.name }}</p>
@@ -84,7 +86,7 @@ const declineInvitation = (invitation: DashboardInvitation) => {
                             Accept
                         </Button>
                     </div>
-                </div>
+                </Item>
             </div>
         </DialogContent>
     </Dialog>

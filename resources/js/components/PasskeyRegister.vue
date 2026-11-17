@@ -3,8 +3,9 @@ import { usePasskeyRegister } from '@laravel/passkeys/vue';
 import { ref } from 'vue';
 import InputError from '@/components/InputError.vue';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Field, FieldLabel, FieldDescription } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 
 const emit = defineEmits<{
     success: [];
@@ -68,35 +69,37 @@ const handleCancel = () => {
         Add passkey
     </Button>
 
-    <form
-        v-else
-        @submit="handleSubmit"
-        class="space-y-4 rounded-lg border border-border bg-muted/50 p-4"
+    <Card v-else
+        ><CardContent>
+            <form @submit="handleSubmit" class="flex flex-col gap-4">
+                <Field :data-invalid="!!error">
+                    <FieldLabel for="passkey-name">Passkey name</FieldLabel>
+                    <Input
+                        id="passkey-name"
+                        type="text"
+                        v-model="name"
+                        placeholder="e.g., MacBook Pro, iPhone"
+                        :aria-invalid="!!error"
+                        aria-describedby="passkey-help passkey-error"
+                        v-focus
+                    />
+                    <FieldDescription id="passkey-help"
+                        >A name helps you identify this passkey
+                        later.</FieldDescription
+                    >
+                </Field>
+
+                <InputError id="passkey-error" :message="error ?? undefined" />
+
+                <div class="flex gap-2">
+                    <Button type="submit" :disabled="isLoading || !name.trim()">
+                        {{ isLoading ? 'Registering...' : 'Register passkey' }}
+                    </Button>
+                    <Button type="button" variant="ghost" @click="handleCancel">
+                        Cancel
+                    </Button>
+                </div>
+            </form></CardContent
+        ></Card
     >
-        <div class="grid gap-2">
-            <Label for="passkey-name">Passkey name</Label>
-            <Input
-                id="passkey-name"
-                type="text"
-                v-model="name"
-                placeholder="e.g., MacBook Pro, iPhone"
-                class="mt-1 block w-full border-foreground/20"
-                v-focus
-            />
-            <p class="text-xs text-muted-foreground">
-                A name helps you identify this passkey later.
-            </p>
-        </div>
-
-        <InputError v-if="error" :message="error" />
-
-        <div class="flex gap-2">
-            <Button type="submit" :disabled="isLoading || !name.trim()">
-                {{ isLoading ? 'Registering...' : 'Register passkey' }}
-            </Button>
-            <Button type="button" variant="ghost" @click="handleCancel">
-                Cancel
-            </Button>
-        </div>
-    </form>
 </template>

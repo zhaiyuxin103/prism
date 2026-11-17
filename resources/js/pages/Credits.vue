@@ -3,6 +3,16 @@ import { Head, Link, router } from '@inertiajs/vue3';
 import { ref, watch } from 'vue';
 import CreditBalanceCard from '@/components/CreditBalance.vue';
 import { Button } from '@/components/ui/button';
+import { Empty, EmptyDescription } from '@/components/ui/empty';
+import {
+    Table,
+    TableBody,
+    TableCaption,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from '@/components/ui/table';
 import { index } from '@/routes/credits';
 import { formatCredit } from '@/types/credits';
 import type { CreditBalance, CreditEntryPage } from '@/types/credits';
@@ -59,55 +69,53 @@ defineOptions({
                     >Refresh</Button
                 >
             </div>
-            <p
-                v-if="!entries.meta.total"
-                class="rounded-xl border border-dashed p-8 text-center text-sm text-muted-foreground"
+            <Empty v-if="!entries.meta.total" class="border"
+                ><EmptyDescription>
+                    No credit activity yet. Buy simulated credits to get
+                    started.
+                </EmptyDescription></Empty
             >
-                No credit activity yet. Buy simulated credits to get started.
-            </p>
-            <div v-else class="overflow-x-auto rounded-xl border">
-                <table
-                    class="w-full text-left text-sm whitespace-nowrap [&_td]:p-3 [&_th]:p-3"
-                >
-                    <caption class="sr-only">
+            <div v-else class="overflow-hidden rounded-xl border">
+                <Table class="text-left">
+                    <TableCaption class="sr-only">
                         Credit changes and reservations in USD
-                    </caption>
-                    <thead class="bg-muted/50 text-xs text-muted-foreground">
-                        <tr>
-                            <th scope="col">Time (UTC)</th>
-                            <th scope="col">Activity</th>
-                            <th scope="col">Balance change</th>
-                            <th scope="col">Reserved change</th>
-                            <th scope="col">Balance after</th>
-                            <th scope="col">Reserved after</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y">
-                        <tr v-for="entry in entries.data" :key="entry.id">
-                            <td>{{ entry.created_at }}</td>
-                            <th scope="row" class="font-medium">
+                    </TableCaption>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead scope="col">Time (UTC)</TableHead>
+                            <TableHead scope="col">Activity</TableHead>
+                            <TableHead scope="col">Balance change</TableHead>
+                            <TableHead scope="col">Reserved change</TableHead>
+                            <TableHead scope="col">Balance after</TableHead>
+                            <TableHead scope="col">Reserved after</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        <TableRow v-for="entry in entries.data" :key="entry.id">
+                            <TableCell>{{ entry.created_at }}</TableCell>
+                            <TableHead scope="row" class="font-medium">
                                 <span>{{ labels[entry.type] }}</span
                                 ><span
                                     v-if="entry.generation_id"
                                     class="mt-1 block font-mono text-xs text-muted-foreground"
                                     >{{ entry.generation_id }}</span
                                 >
-                            </th>
-                            <td class="font-mono">
+                            </TableHead>
+                            <TableCell class="font-mono">
                                 {{ formatCredit(entry.amount) }}
-                            </td>
-                            <td class="font-mono">
+                            </TableCell>
+                            <TableCell class="font-mono">
                                 {{ formatCredit(entry.reserved_amount) }}
-                            </td>
-                            <td class="font-mono">
+                            </TableCell>
+                            <TableCell class="font-mono">
                                 {{ formatCredit(entry.balance_after) }}
-                            </td>
-                            <td class="font-mono">
+                            </TableCell>
+                            <TableCell class="font-mono">
                                 {{ formatCredit(entry.reserved_after) }}
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
+                            </TableCell>
+                        </TableRow>
+                    </TableBody>
+                </Table>
             </div>
             <nav
                 v-if="entries.meta.last_page > 1"
