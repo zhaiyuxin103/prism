@@ -12,6 +12,11 @@ import {
     CardFooter,
 } from '@/components/ui/card';
 import {
+    Collapsible,
+    CollapsibleTrigger,
+    CollapsibleContent,
+} from '@/components/ui/collapsible';
+import {
     Dialog,
     DialogContent,
     DialogDescription,
@@ -66,6 +71,7 @@ async function resumeChecking(): Promise<void> {
         error.value = 'Could not resume checking. Please try again.';
     }
 }
+const promptOpen = ref(false);
 </script>
 
 <template>
@@ -75,9 +81,10 @@ async function resumeChecking(): Promise<void> {
         >
             <Dialog v-if="hasImage">
                 <DialogTrigger as-child>
-                    <button
+                    <Button
+                        variant="ghost"
                         type="button"
-                        class="group relative size-full cursor-zoom-in focus-visible:-outline-offset-4"
+                        class="group relative size-full cursor-zoom-in rounded-none p-0"
                         :aria-label="`Preview image: ${generation.prompt}`"
                     >
                         <img
@@ -88,14 +95,12 @@ async function resumeChecking(): Promise<void> {
                             class="size-full object-contain"
                             @error="brokenImage = true"
                         />
-                        <span
-                            class="absolute right-3 bottom-3 flex items-center gap-1.5 rounded-lg border bg-background/95 px-2.5 py-2 text-xs font-medium shadow-sm"
-                            ><Expand
-                                class="size-3.5"
-                                aria-hidden="true"
-                            />Preview</span
+                        <Badge
+                            variant="secondary"
+                            class="absolute right-3 bottom-3"
+                            ><Expand aria-hidden="true" />Preview</Badge
                         >
-                    </button>
+                    </Button>
                 </DialogTrigger>
                 <DialogContent
                     class="max-h-[90svh] overflow-y-auto sm:max-w-4xl"
@@ -170,29 +175,32 @@ async function resumeChecking(): Promise<void> {
             </div>
         </div>
         <CardHeader class="py-6">
-            <details class="group">
-                <summary
-                    class="cursor-pointer list-none rounded-sm [&::-webkit-details-marker]:hidden"
-                >
-                    <span
-                        class="line-clamp-2 text-sm leading-relaxed wrap-anywhere group-open:hidden"
-                        >{{ generation.prompt }}</span
-                    >
-                    <span
-                        class="mt-1.5 block text-xs font-medium text-primary group-open:hidden"
-                        >View full prompt</span
-                    >
-                    <span
-                        class="hidden text-xs font-medium text-primary group-open:block"
-                        >Hide full prompt</span
-                    >
-                </summary>
+            <Collapsible v-model:open="promptOpen" class="flex flex-col gap-2">
                 <p
-                    class="mt-2 text-sm leading-relaxed wrap-anywhere whitespace-pre-wrap"
+                    v-if="!promptOpen"
+                    class="line-clamp-2 text-sm leading-relaxed wrap-anywhere"
                 >
                     {{ generation.prompt }}
                 </p>
-            </details>
+                <CollapsibleTrigger as-child>
+                    <Button
+                        type="button"
+                        variant="link"
+                        size="sm"
+                        class="justify-start px-0"
+                        >{{
+                            promptOpen ? 'Hide full prompt' : 'View full prompt'
+                        }}</Button
+                    >
+                </CollapsibleTrigger>
+                <CollapsibleContent force-mount v-show="promptOpen">
+                    <p
+                        class="text-sm leading-relaxed wrap-anywhere whitespace-pre-wrap"
+                    >
+                        {{ generation.prompt }}
+                    </p>
+                </CollapsibleContent>
+            </Collapsible>
             <div class="flex items-center gap-2 text-xs text-muted-foreground">
                 <span class="capitalize">{{ generation.quality }}</span
                 ><span>·</span

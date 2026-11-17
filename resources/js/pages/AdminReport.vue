@@ -2,6 +2,7 @@
 import { Form, Head, Link } from '@inertiajs/vue3';
 import { CircleCheck, CircleAlert, RefreshCw } from '@lucide/vue';
 import { computed, ref } from 'vue';
+import DatePicker from '@/components/DatePicker.vue';
 import InputError from '@/components/InputError.vue';
 import { Button } from '@/components/ui/button';
 import {
@@ -11,9 +12,13 @@ import {
     CardDescription,
     CardContent,
 } from '@/components/ui/card';
+import {
+    Collapsible,
+    CollapsibleTrigger,
+    CollapsibleContent,
+} from '@/components/ui/collapsible';
 import { Empty, EmptyDescription } from '@/components/ui/empty';
 import { Field, FieldGroup, FieldLabel } from '@/components/ui/field';
-import { Input } from '@/components/ui/input';
 import {
     Table,
     TableBody,
@@ -117,14 +122,19 @@ defineOptions({
                                 <FieldLabel for="start_date"
                                     >From (UTC)</FieldLabel
                                 >
-                                <Input
+                                <DatePicker
                                     id="start_date"
                                     name="start_date"
-                                    type="date"
+                                    label="From (UTC)"
                                     :default-value="filters.start_date"
+                                    :aria-invalid="!!errors.start_date"
+                                    aria-describedby="start_date-error"
                                     required
                                 />
-                                <InputError :message="errors.start_date" />
+                                <InputError
+                                    id="start_date-error"
+                                    :message="errors.start_date"
+                                />
                             </Field>
                             <Field
                                 class="w-auto"
@@ -133,14 +143,19 @@ defineOptions({
                                 <FieldLabel for="end_date"
                                     >Through (UTC)</FieldLabel
                                 >
-                                <Input
+                                <DatePicker
                                     id="end_date"
                                     name="end_date"
-                                    type="date"
+                                    label="Through (UTC)"
                                     :default-value="filters.end_date"
+                                    :aria-invalid="!!errors.end_date"
+                                    aria-describedby="end_date-error"
                                     required
                                 />
-                                <InputError :message="errors.end_date" />
+                                <InputError
+                                    id="end_date-error"
+                                    :message="errors.end_date"
+                                />
                             </Field>
                             <Button
                                 type="submit"
@@ -421,47 +436,69 @@ defineOptions({
                     </EmptyDescription></Empty
                 >
                 <div v-else class="overflow-hidden rounded-xl border">
-                    <details
+                    <Collapsible
                         v-for="user in users.data"
+                        v-slot="{ open }"
                         :key="user.id ?? 'deleted'"
                         class="border-b last:border-b-0"
                     >
-                        <summary
-                            class="cursor-pointer p-4 focus-visible:outline-2 focus-visible:outline-ring"
-                        >
-                            <span class="font-medium">{{ user.name }}</span>
-                            <span class="ml-2 text-xs text-muted-foreground">{{
-                                user.email ?? 'Retained financial history'
-                            }}</span>
-                            <span
-                                class="mt-2 flex flex-wrap gap-x-6 gap-y-2 pl-4 text-sm"
+                        <CollapsibleTrigger as-child>
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                class="h-auto w-full flex-col items-start p-4 whitespace-normal"
                             >
-                                <span
-                                    >Spend
-                                    <strong class="font-mono">{{
-                                        formatCost(user.amounts.user_charge)
-                                    }}</strong></span
-                                >
-                                <span
-                                    >Cost
-                                    <strong class="font-mono">{{
-                                        formatCost(user.amounts.provider_cost)
-                                    }}</strong></span
-                                >
-                                <span
-                                    >Profit
-                                    <strong class="font-mono">{{
-                                        formatCost(user.amounts.profit)
-                                    }}</strong></span
-                                >
-                                <span class="text-muted-foreground"
-                                    >{{ user.amounts.generations }} succeeded /
-                                    {{ user.amounts.failed }} failed · expand
-                                    daily details</span
-                                >
-                            </span>
-                        </summary>
-                        <div class="overflow-x-auto border-t bg-muted/20">
+                                <span class="text-left">
+                                    <span class="font-medium">{{
+                                        user.name
+                                    }}</span>
+                                    <span
+                                        class="ml-2 text-xs text-muted-foreground"
+                                        >{{
+                                            user.email ??
+                                            'Retained financial history'
+                                        }}</span
+                                    >
+                                    <span
+                                        class="mt-2 flex flex-wrap gap-x-6 gap-y-2 pl-4 text-sm"
+                                    >
+                                        <span
+                                            >Spend
+                                            <strong class="font-mono">{{
+                                                formatCost(
+                                                    user.amounts.user_charge,
+                                                )
+                                            }}</strong></span
+                                        >
+                                        <span
+                                            >Cost
+                                            <strong class="font-mono">{{
+                                                formatCost(
+                                                    user.amounts.provider_cost,
+                                                )
+                                            }}</strong></span
+                                        >
+                                        <span
+                                            >Profit
+                                            <strong class="font-mono">{{
+                                                formatCost(user.amounts.profit)
+                                            }}</strong></span
+                                        >
+                                        <span class="text-muted-foreground"
+                                            >{{ user.amounts.generations }}
+                                            succeeded /
+                                            {{ user.amounts.failed }} failed ·
+                                            expand daily details</span
+                                        >
+                                    </span>
+                                </span>
+                            </Button>
+                        </CollapsibleTrigger>
+                        <CollapsibleContent
+                            force-mount
+                            v-show="open"
+                            class="border-t"
+                        >
                             <Table class="text-left">
                                 <TableCaption class="sr-only">
                                     Daily totals for
@@ -523,8 +560,8 @@ defineOptions({
                                     </TableRow>
                                 </TableBody>
                             </Table>
-                        </div>
-                    </details>
+                        </CollapsibleContent>
+                    </Collapsible>
                 </div>
                 <nav
                     v-if="users.last_page > 1"

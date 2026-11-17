@@ -12,9 +12,13 @@ import {
 } from '@/components/ui/card';
 import { Field, FieldLabel, FieldGroup } from '@/components/ui/field';
 import {
-    NativeSelect,
-    NativeSelectOption,
-} from '@/components/ui/native-select';
+    Select,
+    SelectContent,
+    SelectGroup,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
 import { useCreditPurchase } from '@/composables/useCreditPurchase';
 import { index } from '@/routes/credits';
 import { formatCredit } from '@/types/credits';
@@ -73,21 +77,28 @@ const { amount, pending, http, message, success, purchase } = useCreditPurchase(
                         <FieldLabel for="credit-package"
                             >Credit package</FieldLabel
                         >
-                        <NativeSelect
-                            id="credit-package"
+                        <Select
                             v-model="amount"
                             :disabled="http.processing || !!pending"
-                            :aria-invalid="!!http.errors.amount"
-                            aria-describedby="credit-package-error"
                         >
-                            <NativeSelectOption
-                                v-for="value in packages"
-                                :key="value"
-                                :value="value"
+                            <SelectTrigger
+                                id="credit-package"
+                                :aria-invalid="!!http.errors.amount"
+                                aria-describedby="credit-package-error"
                             >
-                                ${{ value }} USD
-                            </NativeSelectOption>
-                        </NativeSelect>
+                                <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent
+                                ><SelectGroup>
+                                    <SelectItem
+                                        v-for="value in packages"
+                                        :key="value"
+                                        :value="value"
+                                        >${{ value }} USD</SelectItem
+                                    >
+                                </SelectGroup></SelectContent
+                            >
+                        </Select>
                     </Field>
                     <Button type="submit" :disabled="http.processing"
                         ><LoaderCircle

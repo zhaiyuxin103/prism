@@ -19,6 +19,7 @@ import {
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
+import { Item } from '@/components/ui/item';
 import { Label } from '@/components/ui/label';
 import {
     Tooltip,
@@ -165,11 +166,12 @@ const confirmCancelInvitation = (invitation: TeamInvitation) => {
             </div>
 
             <div class="space-y-3">
-                <div
+                <Item
+                    variant="outline"
                     v-for="member in members"
                     :key="member.id"
                     data-test="member-row"
-                    class="flex items-center justify-between rounded-lg border p-4"
+                    class="justify-between"
                 >
                     <div class="flex items-center gap-4">
                         <Avatar class="h-10 w-10">
@@ -251,7 +253,7 @@ const confirmCancelInvitation = (invitation: TeamInvitation) => {
                             </Tooltip>
                         </TooltipProvider>
                     </div>
-                </div>
+                </Item>
             </div>
         </div>
 
@@ -264,11 +266,12 @@ const confirmCancelInvitation = (invitation: TeamInvitation) => {
             />
 
             <div class="space-y-3">
-                <div
+                <Item
+                    variant="outline"
                     v-for="invitation in invitations"
                     :key="invitation.code"
                     data-test="invitation-row"
-                    class="flex items-center justify-between rounded-lg border p-4"
+                    class="justify-between"
                 >
                     <div class="flex items-center gap-4">
                         <div
@@ -303,7 +306,7 @@ const confirmCancelInvitation = (invitation: TeamInvitation) => {
                             </TooltipContent>
                         </Tooltip>
                     </TooltipProvider>
-                </div>
+                </Item>
             </div>
         </div>
 

@@ -180,10 +180,9 @@ defineOptions({
                             class="flex items-center gap-2.5 font-semibold"
                         >
                             Your generations
-                            <span
-                                class="rounded-md bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground tabular-nums"
-                                >{{ generations.meta.total }}</span
-                            >
+                            <Badge variant="secondary">{{
+                                generations.meta.total
+                            }}</Badge>
                         </h2>
                         <span
                             class="flex items-center gap-1.5 text-xs text-muted-foreground"

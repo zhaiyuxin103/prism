@@ -24,6 +24,7 @@ import {
     InputOTPGroup,
     InputOTPSlot,
 } from '@/components/ui/input-otp';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Spinner } from '@/components/ui/spinner';
 import { useAppearance } from '@/composables/useAppearance';
 import { useTwoFactorAuth } from '@/composables/useTwoFactorAuth';
@@ -166,12 +167,12 @@ watch(
                             <div
                                 class="relative mx-auto aspect-square w-64 overflow-hidden rounded-lg border border-border"
                             >
-                                <div
+                                <Skeleton
                                     v-if="!qrCodeSvg"
-                                    class="absolute inset-0 z-10 flex aspect-square h-auto w-full animate-pulse items-center justify-center bg-background"
+                                    class="absolute inset-0 flex aspect-square h-auto w-full items-center justify-center"
                                 >
                                     <Spinner class="size-6" />
-                                </div>
+                                </Skeleton>
                                 <div
                                     v-else
                                     class="relative z-10 overflow-hidden border p-5"

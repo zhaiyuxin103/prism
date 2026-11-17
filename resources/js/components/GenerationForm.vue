@@ -6,7 +6,7 @@ import {
     LoaderCircle,
     Sparkles,
 } from '@lucide/vue';
-import { computed } from 'vue';
+import { computed, ref, watch } from 'vue';
 import InputError from '@/components/InputError.vue';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
@@ -18,6 +18,11 @@ import {
     CardContent,
 } from '@/components/ui/card';
 import {
+    Collapsible,
+    CollapsibleTrigger,
+    CollapsibleContent,
+} from '@/components/ui/collapsible';
+import {
     Field,
     FieldGroup,
     FieldSet,
@@ -25,11 +30,15 @@ import {
     FieldLabel,
     FieldDescription,
 } from '@/components/ui/field';
-import {
-    NativeSelect,
-    NativeSelectOption,
-} from '@/components/ui/native-select';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import {
+    Select,
+    SelectContent,
+    SelectGroup,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { Textarea } from '@/components/ui/textarea';
 import { useGenerationForm } from '@/composables/useGenerationForm';
@@ -83,6 +92,13 @@ const referenceErrors = computed(() =>
             key === 'reference_images' || key.startsWith('reference_images.'),
     ),
 );
+const hasReferences = computed(
+    () => referenceErrors.value.length > 0 || !!fields.references,
+);
+const referencesOpen = ref(hasReferences.value);
+watch(hasReferences, (open) => {
+    referencesOpen.value = open;
+});
 </script>
 
 <template>
@@ -202,24 +218,34 @@ const referenceErrors = computed(() =>
                         </FieldSet>
                         <Field :data-invalid="!!errors.quality">
                             <FieldLabel for="quality">Quality</FieldLabel>
-                            <NativeSelect
-                                id="quality"
+                            <Select
                                 v-model="fields.quality"
-                                aria-describedby="quality-help quality-error"
-                                :aria-invalid="!!errors.quality"
+                                :disabled="isSubmitting || !configured"
                             >
-                                <NativeSelectOption value="low"
-                                    >Low · Quick
-                                    explorations</NativeSelectOption
+                                <SelectTrigger
+                                    id="quality"
+                                    aria-describedby="quality-help quality-error"
+                                    :aria-invalid="!!errors.quality"
+                                    class="w-full"
                                 >
-                                <NativeSelectOption value="medium"
-                                    >Medium · Everyday
-                                    creations</NativeSelectOption
+                                    <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent
+                                    ><SelectGroup>
+                                        <SelectItem value="low"
+                                            >Low · Quick
+                                            explorations</SelectItem
+                                        >
+                                        <SelectItem value="medium"
+                                            >Medium · Everyday
+                                            creations</SelectItem
+                                        >
+                                        <SelectItem value="high"
+                                            >High · Finer details</SelectItem
+                                        >
+                                    </SelectGroup></SelectContent
                                 >
-                                <NativeSelectOption value="high"
-                                    >High · Finer details</NativeSelectOption
-                                >
-                            </NativeSelect>
+                            </Select>
                             <FieldDescription id="quality-help"
                                 >Higher quality increases the estimated
                                 cost.</FieldDescription
@@ -229,139 +255,158 @@ const referenceErrors = computed(() =>
                                 :message="errors.quality"
                             />
                         </Field>
-                        <details
-                            :open="
-                                referenceErrors.length > 0 ||
-                                !!fields.references
-                            "
-                            class="group rounded-xl border p-3.5"
+                        <Collapsible
+                            v-model:open="referencesOpen"
+                            class="flex flex-col gap-4"
                         >
-                            <summary
-                                class="flex min-h-6 cursor-pointer list-none items-center gap-2 text-sm font-medium [&::-webkit-details-marker]:hidden"
-                            >
-                                <ImagePlus
-                                    class="size-4 text-muted-foreground"
-                                    aria-hidden="true"
-                                />
-                                Add reference images
-                                <span
-                                    class="text-xs font-normal text-muted-foreground"
-                                    >Optional</span
+                            <CollapsibleTrigger as-child>
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    class="w-full"
                                 >
-                                <ChevronDown
-                                    class="ml-auto size-4 text-muted-foreground transition-transform group-open:rotate-180 motion-reduce:transition-none"
-                                    aria-hidden="true"
-                                />
-                            </summary>
-                            <Field
-                                class="mt-4"
-                                :data-invalid="referenceErrors.length > 0"
-                            >
-                                <FieldLabel for="references"
-                                    >Reference image URLs</FieldLabel
-                                >
-                                <Textarea
-                                    id="references"
-                                    v-model="references"
-                                    rows="2"
-                                    aria-describedby="references-help references-errors"
-                                    :aria-invalid="referenceErrors.length > 0"
-                                    placeholder="https://example.com/reference.png"
-                                />
-                                <p
-                                    id="references-help"
-                                    class="text-xs leading-relaxed text-muted-foreground"
-                                >
-                                    One URL per line, up to 4. References add to
-                                    the cost.
-                                </p>
-                                <div id="references-errors">
-                                    <p
-                                        v-for="[key, error] in referenceErrors"
-                                        :key="key"
-                                        class="text-sm text-destructive"
+                                    <ImagePlus /> Add reference images
+                                    <span class="text-muted-foreground"
+                                        >Optional</span
                                     >
-                                        {{ error }}
+                                    <ChevronDown
+                                        class="ml-auto transition-transform"
+                                        :class="{
+                                            'rotate-180': referencesOpen,
+                                        }"
+                                    />
+                                </Button>
+                            </CollapsibleTrigger>
+                            <CollapsibleContent
+                                force-mount
+                                v-show="referencesOpen"
+                            >
+                                <Field
+                                    class="mt-4"
+                                    :data-invalid="referenceErrors.length > 0"
+                                >
+                                    <FieldLabel for="references"
+                                        >Reference image URLs</FieldLabel
+                                    >
+                                    <Textarea
+                                        id="references"
+                                        v-model="references"
+                                        rows="2"
+                                        aria-describedby="references-help references-errors"
+                                        :aria-invalid="
+                                            referenceErrors.length > 0
+                                        "
+                                        placeholder="https://example.com/reference.png"
+                                    />
+                                    <p
+                                        id="references-help"
+                                        class="text-xs leading-relaxed text-muted-foreground"
+                                    >
+                                        One URL per line, up to 4. References
+                                        add to the cost.
                                     </p>
-                                </div>
-                            </Field>
-                        </details>
+                                    <div id="references-errors">
+                                        <p
+                                            v-for="[
+                                                key,
+                                                error,
+                                            ] in referenceErrors"
+                                            :key="key"
+                                            class="text-sm text-destructive"
+                                        >
+                                            {{ error }}
+                                        </p>
+                                    </div>
+                                </Field>
+                            </CollapsibleContent>
+                        </Collapsible>
                     </FieldGroup>
                 </FieldSet>
                 <Separator />
                 <div class="flex flex-col gap-4">
-                    <div
-                        class="rounded-xl border border-primary/10 bg-accent/40 p-4"
-                    >
-                        <div
-                            class="flex flex-wrap items-baseline justify-between gap-2"
-                            aria-live="polite"
-                            aria-atomic="true"
-                        >
-                            <span class="text-sm font-medium"
-                                >Estimated cost
+                    <Card class="py-4"
+                        ><CardContent>
+                            <div
+                                class="flex flex-wrap items-baseline justify-between gap-2"
+                                aria-live="polite"
+                                aria-atomic="true"
+                            >
+                                <span class="text-sm font-medium"
+                                    >Estimated cost
+                                    <span
+                                        class="text-xs font-normal text-muted-foreground"
+                                        >USD</span
+                                    ></span
+                                >
                                 <span
-                                    class="text-xs font-normal text-muted-foreground"
-                                    >USD</span
-                                ></span
+                                    class="font-mono text-xl font-semibold tracking-tight break-all"
+                                    >{{
+                                        isEstimating
+                                            ? '…'
+                                            : quote
+                                              ? formatCost(quote.estimated_cost)
+                                              : '—'
+                                    }}</span
+                                >
+                            </div>
+                            <p
+                                v-if="isEstimating"
+                                role="status"
+                                class="mt-2 text-xs text-muted-foreground"
                             >
-                            <span
-                                class="font-mono text-xl font-semibold tracking-tight break-all"
-                                >{{
-                                    isEstimating
-                                        ? '…'
-                                        : quote
-                                          ? formatCost(quote.estimated_cost)
-                                          : '—'
-                                }}</span
-                            >
-                        </div>
-                        <p
-                            v-if="isEstimating"
-                            role="status"
-                            class="mt-2 text-xs text-muted-foreground"
-                        >
-                            Calculating your estimate…
-                        </p>
-                        <p
-                            v-else-if="!quote"
-                            class="mt-2 text-xs leading-relaxed text-muted-foreground"
-                        >
-                            Add your prompt to see a price before you generate.
-                        </p>
-                        <p
-                            v-if="quote"
-                            class="mt-2 text-xs leading-relaxed text-muted-foreground"
-                        >
-                            Upper estimate at current rates:
-                            <span class="font-mono break-all text-foreground">{{
-                                formatCost(quote.maximum_cost)
-                            }}</span>
-                        </p>
-                        <p
-                            class="mt-3 text-xs leading-relaxed text-muted-foreground"
-                        >
-                            Both estimates include a 25% markup. Actual cost may
-                            be higher or lower. The upper estimate is not a
-                            fixed spending cap.
-                        </p>
-                        <details class="mt-2 text-xs text-muted-foreground">
-                            <summary
-                                class="w-fit cursor-pointer py-1 underline decoration-border underline-offset-4"
-                            >
-                                How estimates work
-                            </summary>
-                            <p class="pt-2 leading-relaxed">
-                                The upper estimate assumes maximum token usage
-                                at current rates. Your final cost is based on
-                                actual usage. The upper estimate is reserved
-                                from your balance when you submit. If provider
-                                rates change before acceptance, the final charge
-                                can exceed the reservation and must be covered
-                                before generating again.
+                                Calculating your estimate…
                             </p>
-                        </details>
-                    </div>
+                            <p
+                                v-else-if="!quote"
+                                class="mt-2 text-xs leading-relaxed text-muted-foreground"
+                            >
+                                Add your prompt to see a price before you
+                                generate.
+                            </p>
+                            <p
+                                v-if="quote"
+                                class="mt-2 text-xs leading-relaxed text-muted-foreground"
+                            >
+                                Upper estimate at current rates:
+                                <span
+                                    class="font-mono break-all text-foreground"
+                                    >{{ formatCost(quote.maximum_cost) }}</span
+                                >
+                            </p>
+                            <p
+                                class="mt-3 text-xs leading-relaxed text-muted-foreground"
+                            >
+                                Both estimates include a 25% markup. Actual cost
+                                may be higher or lower. The upper estimate is
+                                not a fixed spending cap.
+                            </p>
+                            <Collapsible
+                                class="mt-2 text-xs text-muted-foreground"
+                            >
+                                <CollapsibleTrigger as-child
+                                    ><Button
+                                        type="button"
+                                        variant="link"
+                                        size="sm"
+                                        class="px-0"
+                                        >How estimates work</Button
+                                    ></CollapsibleTrigger
+                                >
+                                <CollapsibleContent>
+                                    <p class="pt-2 leading-relaxed">
+                                        The upper estimate assumes maximum token
+                                        usage at current rates. Your final cost
+                                        is based on actual usage. The upper
+                                        estimate is reserved from your balance
+                                        when you submit. If provider rates
+                                        change before acceptance, the final
+                                        charge can exceed the reservation and
+                                        must be covered before generating again.
+                                    </p>
+                                </CollapsibleContent>
+                            </Collapsible>
+                        </CardContent></Card
+                    >
                     <Alert v-if="!configured" role="status"
                         ><AlertDescription
                             >Image generation is being set up. Please check back

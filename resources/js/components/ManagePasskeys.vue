@@ -1,11 +1,18 @@
 <script setup lang="ts">
 import { router } from '@inertiajs/vue3';
 import { KeyRound } from '@lucide/vue';
-import type { Passkey } from '@/types/auth';
+import { destroy } from '@/actions/Laravel/Passkeys/Http/Controllers/PasskeyRegistrationController';
 import Heading from '@/components/Heading.vue';
 import PasskeyItem from '@/components/PasskeyItem.vue';
 import PasskeyRegister from '@/components/PasskeyRegister.vue';
-import { destroy } from '@/actions/Laravel/Passkeys/Http/Controllers/PasskeyRegistrationController';
+import {
+    Empty,
+    EmptyHeader,
+    EmptyMedia,
+    EmptyTitle,
+    EmptyDescription,
+} from '@/components/ui/empty';
+import type { Passkey } from '@/types/auth';
 
 export type Props = {
     canManagePasskeys?: boolean;
@@ -47,17 +54,16 @@ const handleRegisterSuccess = () => {
                 />
             </template>
 
-            <div v-else class="p-8 text-center">
-                <div
-                    class="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-muted"
-                >
-                    <KeyRound class="h-7 w-7 text-muted-foreground" />
-                </div>
-                <p class="font-medium">No passkeys yet</p>
-                <p class="mt-1 text-sm text-muted-foreground">
-                    Add a passkey to sign in without a password
-                </p>
-            </div>
+            <Empty v-else
+                ><EmptyHeader>
+                    <EmptyMedia variant="icon"><KeyRound /></EmptyMedia>
+                    <EmptyTitle>No passkeys yet</EmptyTitle>
+                    <EmptyDescription
+                        >Add a passkey to sign in without a
+                        password</EmptyDescription
+                    >
+                </EmptyHeader></Empty
+            >
         </div>
 
         <PasskeyRegister @success="handleRegisterSuccess" />
