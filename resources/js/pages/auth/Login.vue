@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { Form, Head } from '@inertiajs/vue3';
 import InputError from '@/components/InputError.vue';
-import PasswordInput from '@/components/PasswordInput.vue';
 import PasskeyVerify from '@/components/PasskeyVerify.vue';
+import PasswordInput from '@/components/PasswordInput.vue';
 import TeamInvitationAlert from '@/components/TeamInvitationAlert.vue';
 import TextLink from '@/components/TextLink.vue';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
@@ -63,12 +64,11 @@ withDefaults(
             </Form>
         </section>
 
-        <div
-            v-if="status"
-            class="mb-4 text-center text-sm font-medium text-green-600"
+        <Alert v-if="status" variant="success" role="status"
+            ><AlertDescription>
+                {{ status }}
+            </AlertDescription></Alert
         >
-            {{ status }}
-        </div>
 
         <TeamInvitationAlert
             v-if="teamInvitation"

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { Form } from '@inertiajs/vue3';
-import { useClipboard } from '@vueuse/core';
 import { Check, Copy, ScanLine } from '@lucide/vue';
+import { useClipboard } from '@vueuse/core';
 import { computed, nextTick, ref, useTemplateRef, watch } from 'vue';
 import AlertError from '@/components/AlertError.vue';
 import InputError from '@/components/InputError.vue';
@@ -13,6 +13,12 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
+import {
+    InputGroup,
+    InputGroupInput,
+    InputGroupAddon,
+    InputGroupButton,
+} from '@/components/ui/input-group';
 import {
     InputOTP,
     InputOTPGroup,
@@ -201,38 +207,39 @@ watch(
                             >
                         </div>
 
-                        <div
-                            class="flex w-full items-center justify-center space-x-2"
-                        >
+                        <InputGroup>
                             <div
-                                class="flex w-full items-stretch overflow-hidden rounded-xl border border-border"
+                                v-if="!manualSetupKey"
+                                class="flex w-full justify-center p-3"
                             >
-                                <div
-                                    v-if="!manualSetupKey"
-                                    class="flex h-full w-full items-center justify-center bg-muted p-3"
-                                >
-                                    <Spinner />
-                                </div>
-                                <template v-else>
-                                    <input
-                                        type="text"
-                                        readonly
-                                        :value="manualSetupKey"
-                                        class="h-full w-full bg-background p-3 text-foreground"
-                                    />
-                                    <button
+                                <Spinner />
+                            </div>
+                            <template v-else>
+                                <InputGroupInput
+                                    type="text"
+                                    readonly
+                                    :model-value="manualSetupKey"
+                                    aria-label="Authenticator setup key"
+                                />
+                                <InputGroupAddon align="inline-end">
+                                    <InputGroupButton
+                                        type="button"
+                                        size="icon-xs"
                                         @click="copy(manualSetupKey || '')"
-                                        class="relative block h-auto border-l border-border px-3 hover:bg-muted"
+                                        :aria-label="
+                                            copied
+                                                ? 'Copied setup key'
+                                                : 'Copy setup key'
+                                        "
                                     >
                                         <Check
                                             v-if="copied"
-                                            class="w-4 text-green-500"
-                                        />
-                                        <Copy v-else class="w-4" />
-                                    </button>
-                                </template>
-                            </div>
-                        </div>
+                                            class="text-success"
+                                        /><Copy v-else />
+                                    </InputGroupButton>
+                                </InputGroupAddon>
+                            </template>
+                        </InputGroup>
                     </template>
                 </template>
 

@@ -8,6 +8,7 @@ import Heading from '@/components/Heading.vue';
 import InputError from '@/components/InputError.vue';
 import InviteMemberModal from '@/components/InviteMemberModal.vue';
 import RemoveMemberModal from '@/components/RemoveMemberModal.vue';
+import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -316,17 +317,14 @@ const confirmCancelInvitation = (invitation: TeamInvitation) => {
                 title="Delete team"
                 description="Permanently delete your team"
             />
-            <div
-                class="space-y-4 rounded-lg border border-red-100 bg-red-50 p-4 dark:border-red-200/10 dark:bg-red-700/10"
-            >
-                <div
-                    class="relative space-y-0.5 text-red-600 dark:text-red-100"
+            <div class="flex flex-col items-start gap-4">
+                <Alert variant="destructive"
+                    ><AlertTitle>Warning</AlertTitle
+                    ><AlertDescription
+                        >Please proceed with caution, this cannot be
+                        undone.</AlertDescription
+                    ></Alert
                 >
-                    <p class="font-medium">Warning</p>
-                    <p class="text-sm">
-                        Please proceed with caution, this cannot be undone.
-                    </p>
-                </div>
                 <Button
                     data-test="delete-team-button"
                     variant="destructive"

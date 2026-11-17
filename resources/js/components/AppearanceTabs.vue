@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Monitor, Moon, Sun } from '@lucide/vue';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { useAppearance } from '@/composables/useAppearance';
 
 const { appearance, updateAppearance } = useAppearance();
@@ -9,25 +10,28 @@ const tabs = [
     { value: 'dark', Icon: Moon, label: 'Dark' },
     { value: 'system', Icon: Monitor, label: 'System' },
 ] as const;
+function selectAppearance(value: unknown): void {
+    if (value === 'light' || value === 'dark' || value === 'system') {
+        updateAppearance(value);
+    }
+}
 </script>
 
 <template>
-    <div
-        class="inline-flex gap-1 rounded-lg bg-neutral-100 p-1 dark:bg-neutral-800"
+    <ToggleGroup
+        type="single"
+        variant="outline"
+        :model-value="appearance"
+        aria-label="Color theme"
+        @update:model-value="selectAppearance"
     >
-        <button
+        <ToggleGroupItem
             v-for="{ value, Icon, label } in tabs"
             :key="value"
-            @click="updateAppearance(value)"
-            :class="[
-                'flex items-center rounded-md px-3.5 py-1.5 transition-colors',
-                appearance === value
-                    ? 'bg-white shadow-xs dark:bg-neutral-700 dark:text-neutral-100'
-                    : 'text-neutral-500 hover:bg-neutral-200/60 hover:text-black dark:text-neutral-400 dark:hover:bg-neutral-700/60',
-            ]"
+            :value="value"
+            :aria-label="label"
         >
-            <component :is="Icon" class="-ml-1 h-4 w-4" />
-            <span class="ml-1.5 text-sm">{{ label }}</span>
-        </button>
-    </div>
+            <component :is="Icon" aria-hidden="true" />{{ label }}
+        </ToggleGroupItem>
+    </ToggleGroup>
 </template>

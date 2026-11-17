@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Form, Head } from '@inertiajs/vue3';
 import TextLink from '@/components/TextLink.vue';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
 import { logout } from '@/routes';
@@ -22,13 +23,15 @@ defineProps<{
 <template>
     <Head title="Email verification" />
 
-    <div
+    <Alert
         v-if="status === 'verification-link-sent'"
-        class="mb-4 text-center text-sm font-medium text-green-600"
+        variant="success"
+        role="status"
+        ><AlertDescription>
+            A new verification link has been sent to the email address you
+            provided during registration.
+        </AlertDescription></Alert
     >
-        A new verification link has been sent to the email address you provided
-        during registration.
-    </div>
 
     <Form
         v-bind="send.form()"

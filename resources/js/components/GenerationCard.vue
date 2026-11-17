@@ -2,7 +2,15 @@
 import { useHttp } from '@inertiajs/vue3';
 import { Expand, ImageOff, LoaderCircle, Sparkles } from '@lucide/vue';
 import { computed, ref, watch } from 'vue';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import {
+    Card,
+    CardHeader,
+    CardContent,
+    CardFooter,
+} from '@/components/ui/card';
 import {
     Dialog,
     DialogContent,
@@ -11,6 +19,8 @@ import {
     DialogTitle,
     DialogTrigger,
 } from '@/components/ui/dialog';
+import { Empty, EmptyHeader, EmptyDescription } from '@/components/ui/empty';
+import { Separator } from '@/components/ui/separator';
 import { resume } from '@/routes/generations';
 import { formatCost } from '@/types/generation';
 import type { Generation } from '@/types/generation';
@@ -59,9 +69,7 @@ async function resumeChecking(): Promise<void> {
 </script>
 
 <template>
-    <article
-        class="min-w-0 overflow-hidden rounded-2xl border bg-card shadow-xs transition-shadow hover:shadow-md motion-reduce:transition-none"
-    >
+    <Card role="article" class="min-w-0 gap-0 overflow-hidden py-0">
         <div
             class="relative flex aspect-square items-center justify-center overflow-hidden bg-muted/40"
         >
@@ -90,7 +98,7 @@ async function resumeChecking(): Promise<void> {
                     </button>
                 </DialogTrigger>
                 <DialogContent
-                    class="max-h-[90svh] overflow-y-auto rounded-2xl sm:max-w-4xl"
+                    class="max-h-[90svh] overflow-y-auto sm:max-w-4xl"
                 >
                     <DialogHeader class="pr-6">
                         <DialogTitle>Image preview</DialogTitle>
@@ -114,51 +122,54 @@ async function resumeChecking(): Promise<void> {
                     </p>
                 </DialogContent>
             </Dialog>
+            <Empty v-else class="max-w-64 p-6 md:p-6"
+                ><EmptyHeader>
+                    <LoaderCircle
+                        v-if="pending && !generation.can_resume"
+                        class="size-7 motion-safe:animate-spin"
+                    />
+                    <ImageOff
+                        v-else-if="
+                            generation.status === 'failed' ||
+                            generation.image_expired ||
+                            brokenImage
+                        "
+                        class="size-7"
+                    />
+                    <Sparkles v-else class="size-7" />
+                    <EmptyDescription>
+                        {{
+                            generation.status === 'failed'
+                                ? 'No image generated'
+                                : generation.image_expired
+                                  ? 'Image link expired'
+                                  : brokenImage
+                                    ? 'Image is unavailable'
+                                    : generation.can_resume
+                                      ? 'Check the original request to continue'
+                                      : generation.status === 'processing'
+                                        ? 'Your image is taking shape'
+                                        : 'Your image is on its way'
+                        }}
+                    </EmptyDescription>
+                </EmptyHeader></Empty
+            >
             <div
-                v-else
-                class="flex max-w-64 flex-col items-center gap-3 p-6 text-center text-muted-foreground"
+                class="pointer-events-none absolute top-3 left-3 rounded-full bg-background/95"
             >
-                <LoaderCircle
-                    v-if="pending && !generation.can_resume"
-                    class="size-7 motion-safe:animate-spin"
-                />
-                <ImageOff
-                    v-else-if="
-                        generation.status === 'failed' ||
-                        generation.image_expired ||
-                        brokenImage
+                <Badge
+                    :variant="
+                        generation.status === 'succeeded'
+                            ? 'success'
+                            : generation.status === 'failed'
+                              ? 'destructive'
+                              : 'secondary'
                     "
-                    class="size-7"
-                />
-                <Sparkles v-else class="size-7" />
-                <p class="text-sm">
-                    {{
-                        generation.status === 'failed'
-                            ? 'No image generated'
-                            : generation.image_expired
-                              ? 'Image link expired'
-                              : brokenImage
-                                ? 'Image is unavailable'
-                                : generation.can_resume
-                                  ? 'Check the original request to continue'
-                                  : generation.status === 'processing'
-                                    ? 'Your image is taking shape'
-                                    : 'Your image is on its way'
-                    }}
-                </p>
+                    >{{ label }}</Badge
+                >
             </div>
-            <span
-                class="pointer-events-none absolute top-3 left-3 rounded-full border bg-background/95 px-2.5 py-1 text-xs font-medium shadow-xs"
-                :class="{
-                    'text-emerald-700 dark:text-emerald-400':
-                        generation.status === 'succeeded',
-                    'text-red-700 dark:text-red-400':
-                        generation.status === 'failed',
-                }"
-                >{{ label }}</span
-            >
         </div>
-        <div class="space-y-4 p-5">
+        <CardHeader class="py-6">
             <details class="group">
                 <summary
                     class="cursor-pointer list-none rounded-sm [&::-webkit-details-marker]:hidden"
@@ -187,7 +198,10 @@ async function resumeChecking(): Promise<void> {
                 ><span>·</span
                 ><span>{{ generation.size.replace('x', ' × ') }}</span>
             </div>
-            <dl class="grid grid-cols-2 gap-3 border-t pt-3 text-xs">
+        </CardHeader>
+        <CardContent class="flex flex-col gap-4">
+            <Separator />
+            <dl class="grid grid-cols-2 gap-3 text-xs">
                 <div>
                     <dt class="text-muted-foreground">Estimated</dt>
                     <dd class="mt-1 font-mono break-all tabular-nums">
@@ -216,12 +230,11 @@ async function resumeChecking(): Promise<void> {
                     </dd>
                 </div>
             </dl>
-            <p
-                v-if="generation.error_message"
-                class="rounded-lg bg-muted/60 p-3 text-xs leading-relaxed wrap-anywhere text-muted-foreground"
+            <Alert v-if="generation.error_message" variant="destructive"
+                ><AlertDescription class="wrap-anywhere">{{
+                    generation.error_message
+                }}</AlertDescription></Alert
             >
-                {{ generation.error_message }}
-            </p>
             <p
                 v-if="generation.status === 'failed'"
                 class="text-xs font-medium"
@@ -246,11 +259,13 @@ async function resumeChecking(): Promise<void> {
             <p v-if="error" role="alert" class="text-xs text-destructive">
                 {{ error }}
             </p>
+        </CardContent>
+        <CardFooter class="py-6">
             <time
                 :datetime="generation.created_at"
                 class="block text-xs text-muted-foreground"
                 >{{ new Date(generation.created_at).toLocaleString() }}</time
             >
-        </div>
-    </article>
+        </CardFooter>
+    </Card>
 </template>
